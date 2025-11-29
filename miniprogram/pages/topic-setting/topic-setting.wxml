@@ -56,10 +56,13 @@
 
   <!-- 高级设置 -->
   <view class="setting-section">
-    <view class="section-header">
+    <view class="section-header" bindtap="toggleAdvancedOptions">
       <text class="section-icon">⚙️</text>
       <text class="section-title">高级设置</text>
+      <text class="toggle-icon">{{showAdvancedOptions ? '▼' : '▶'}}</text>
     </view>
+    
+    <!-- 基础选项 -->
     <view class="advanced-options">
       <view class="option-item">
         <view class="option-info">
@@ -74,6 +77,48 @@
           <text class="option-desc">播放题目和答案的语音提示</text>
         </view>
         <switch checked="{{voicePrompt}}" bindchange="onVoicePromptChange" color="#FF7A45"></switch>
+      </view>
+    </view>
+    
+    <!-- 扩展选项（可折叠） -->
+    <view class="extended-options" wx:if="{{showAdvancedOptions}}">
+      <view class="extended-option-item">
+        <text class="extended-option-label">学习目标</text>
+        <textarea 
+          class="extended-option-input" 
+          placeholder="例如：掌握JavaScript基础语法、理解闭包和原型链"
+          value="{{learningGoals}}"
+          bindinput="onLearningGoalsInput"
+          maxlength="200"
+          auto-height
+        ></textarea>
+        <text class="extended-option-hint">描述你希望通过这些题目达到的学习目标</text>
+      </view>
+      
+      <view class="extended-option-item">
+        <text class="extended-option-label">知识点范围</text>
+        <textarea 
+          class="extended-option-input" 
+          placeholder="例如：变量声明、函数、数组、对象、异步编程"
+          value="{{knowledgePoints}}"
+          bindinput="onKnowledgePointsInput"
+          maxlength="200"
+          auto-height
+        ></textarea>
+        <text class="extended-option-hint">指定需要重点覆盖的知识点</text>
+      </view>
+      
+      <view class="extended-option-item">
+        <text class="extended-option-label">题型要求</text>
+        <textarea 
+          class="extended-option-input" 
+          placeholder="例如：包含代码阅读题、概念理解题、实际应用题"
+          value="{{questionTypes}}"
+          bindinput="onQuestionTypesInput"
+          maxlength="200"
+          auto-height
+        ></textarea>
+        <text class="extended-option-hint">指定希望生成的题目类型</text>
       </view>
     </view>
   </view>

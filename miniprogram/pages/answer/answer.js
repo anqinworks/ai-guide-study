@@ -1,5 +1,6 @@
 // pages/answer/answer.js
 const feedback = require('../../utils/feedback')
+const richTextParser = require('../../utils/richTextParser')
 
 Page({
   data: {
@@ -7,7 +8,11 @@ Page({
     totalCount: 0,
     currentCard: {},
     selectedAnswer: '',
-    startTime: 0
+    startTime: 0,
+    // 富文本渲染数据
+    questionHtml: '',
+    optionsHtml: [],
+    explanationHtml: ''
   },
 
   onLoad(options) {
@@ -35,10 +40,20 @@ Page({
     
     // 确保索引在有效范围内
     if (currentIndex >= 0 && currentIndex < qaCards.length) {
+      const currentCard = qaCards[currentIndex]
+      
+      // 解析富文本内容
+      const questionHtml = richTextParser.parseRichText(currentCard.question || '')
+      const optionsHtml = (currentCard.options || []).map(option => 
+        richTextParser.parseRichText(option || '')
+      )
+      
       this.setData({
         currentIndex: currentIndex,
         totalCount: qaCards.length,
-        currentCard: qaCards[currentIndex],
+        currentCard: currentCard,
+        questionHtml: questionHtml,
+        optionsHtml: optionsHtml,
         selectedAnswer: '', // 重置选择
         startTime: Date.now() // 重新开始计时
       })

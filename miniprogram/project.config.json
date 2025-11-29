@@ -46,7 +46,7 @@
     "condition": false,
     "swc": false,
     "disableSWC": true
-  },
+  }, 
   "compileType": "miniprogram",
   "libVersion": "3.12.0",
   "appid": "wxfe6971dcfbaa31f5",

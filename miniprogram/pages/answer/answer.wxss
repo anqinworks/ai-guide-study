@@ -1,9 +1,24 @@
 /* pages/answer/answer.wxss */
 
+/* CSS变量定义 */
+page {
+  --background-color: #f5f7fa;
+  --card-background: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e8e8e8;
+  --primary-color: #FF7A45;
+  --primary-light: rgba(255, 122, 69, 0.1);
+  --success-color: #52c41a;
+  --error-color: #ff4d4f;
+}
+
 .container {
   padding: 40rpx 32rpx;
   background-color: var(--background-color);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 进度条区域 */
@@ -34,27 +49,65 @@
   transition: width 0.3s ease;
 }
 
-/* 问题卡片 */
+/* 问题卡片 - 优化布局和视觉层次 */
 .question-card {
   background-color: var(--card-background);
-  border-radius: 20rpx;
+  border-radius: 24rpx;
   padding: 48rpx;
   margin-bottom: 40rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .question-card:active {
   box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
 }
 
-.question {
+/* 题目头部 */
+.question-header {
+  margin-bottom: 24rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.question-label {
+  font-size: 28rpx;
+  color: #999;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+}
+
+/* 题目内容区域 */
+.question-content {
+  margin-bottom: 40rpx;
+}
+
+.question-text {
   display: block;
   font-size: 36rpx;
-  font-weight: bold;
-  margin-bottom: 40rpx;
+  font-weight: 500;
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.8;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+/* 选项区域标题 */
+.options-section {
+  margin-top: 40rpx;
+  padding-top: 32rpx;
+  border-top: 2rpx solid #f0f0f0;
+}
+
+.options-label {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 24rpx;
 }
 
 /* 选项容器 */
@@ -69,14 +122,25 @@
   padding: 32rpx;
   border: 2rpx solid var(--border-color);
   border-radius: 16rpx;
-  font-size: 32rpx;
-  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.3s ease;
-  line-height: 1.6;
   background-color: var(--card-background);
   position: relative;
   overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+.option-content {
+  position: relative;
+  z-index: 1;
+}
+
+.option-text {
+  display: block;
+  font-size: 32rpx;
+  color: var(--text-primary);
+  line-height: 1.8;
+  word-wrap: break-word;
 }
 
 .option::before {
@@ -132,11 +196,13 @@
   box-shadow: 0 0 0 4rpx rgba(255, 77, 79, 0.2);
 }
 
-/* 按钮组 */
+/* 按钮组 - 优化布局，确保固定在底部 */
 .button-group {
   display: flex;
   justify-content: center;
-  margin-top: 40rpx;
+  margin-top: auto;
+  padding-top: 40rpx;
+  flex-shrink: 0;
 }
 
 /* 按钮样式 */
@@ -199,6 +265,116 @@
   line-height: 1.6;
 }
 
+/* 富文本内容样式增强 */
+rich-text {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+/* 代码块容器 */
+rich-text .code-block {
+  display: block;
+  margin: 24rpx 0;
+}
+
+rich-text code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+rich-text pre {
+  margin: 24rpx 0;
+  padding: 24rpx;
+  background-color: #282c34;
+  border-radius: 12rpx;
+  overflow-x: auto;
+}
+
+rich-text ul,
+rich-text ol {
+  margin: 16rpx 0;
+  padding-left: 40rpx;
+}
+
+rich-text li {
+  margin: 8rpx 0;
+  line-height: 1.8;
+}
+
+rich-text p {
+  margin: 12rpx 0;
+  line-height: 1.8;
+}
+
+rich-text blockquote {
+  margin: 16rpx 0;
+  padding: 16rpx 24rpx;
+  border-left: 4rpx solid #FF7A45;
+  background-color: #f8f9fa;
+  border-radius: 4rpx;
+}
+
+/* 代码块样式 */
+.code-block {
+  background-color: #282c34;
+  color: #abb2bf;
+  padding: 24rpx;
+  border-radius: 12rpx;
+  margin: 24rpx 0;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.inline-code {
+  background-color: #f5f5f5;
+  color: #e83e8c;
+  padding: 4rpx 8rpx;
+  border-radius: 4rpx;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 28rpx;
+}
+
+/* LaTeX公式样式 */
+.latex-formula {
+  display: inline-block;
+  padding: 8rpx 12rpx;
+  background-color: #f8f9fa;
+  border-radius: 6rpx;
+  font-family: 'Times New Roman', serif;
+  font-style: italic;
+  margin: 0 4rpx;
+}
+
+.latex-formula.block {
+  display: block;
+  text-align: center;
+  margin: 24rpx 0;
+  padding: 16rpx;
+}
+
+/* 文本格式化样式 */
+rich-text strong {
+  font-weight: bold;
+  color: #333;
+}
+
+rich-text em {
+  font-style: italic;
+  color: #666;
+}
+
+rich-text ul,
+rich-text ol {
+  margin: 16rpx 0;
+  padding-left: 40rpx;
+}
+
+rich-text li {
+  margin: 8rpx 0;
+  line-height: 1.6;
+}
+
 /* 响应式设计 */
 @media (max-width: 375rpx) {
   .container {
@@ -209,18 +385,25 @@
     padding: 32rpx;
   }
   
-  .question {
+  .question-text {
     font-size: 32rpx;
-    margin-bottom: 32rpx;
   }
   
   .option {
     padding: 28rpx;
+  }
+  
+  .option-text {
     font-size: 28rpx;
   }
   
   .btn {
     font-size: 30rpx;
     padding: 24rpx;
+  }
+  
+  .code-block {
+    font-size: 24rpx;
+    padding: 20rpx;
   }
 }

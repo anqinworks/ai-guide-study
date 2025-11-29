@@ -1,5 +1,6 @@
 <!-- pages/answer/answer.wxml -->
 <view class="container">
+  <!-- 进度区域 -->
   <view class="progress-section">
     <text class="progress-text">第 {{currentIndex + 1}} 题 / 共 {{totalCount}} 题</text>
     <view class="progress">
@@ -7,22 +8,36 @@
     </view>
   </view>
   
+  <!-- 题目卡片 -->
   <view class="question-card">
-    <text class="question">{{currentCard.question}}</text>
+    <view class="question-header">
+      <text class="question-label">题目</text>
+    </view>
+    <view class="question-content">
+      <rich-text class="question-text" nodes="{{questionHtml}}"></rich-text>
+    </view>
     
-    <view class="options">
-      <view class="option {{selectedAnswer === option ? 'selected' : ''}}" 
-            wx:for="{{currentCard.options}}" 
-            wx:for-item="option"
-            wx:key="index"
-            bindtap="selectOption"
-            data-option="{{option}}"
-            hover-class="option-hover">
-        {{option}}
+    <!-- 选项区域 -->
+    <view class="options-section">
+      <text class="options-label">请选择答案</text>
+      <view class="options">
+        <view class="option {{selectedAnswer === option ? 'selected' : ''}}" 
+              wx:for="{{currentCard.options}}" 
+              wx:for-item="option"
+              wx:for-index="optIndex"
+              wx:key="index"
+              bindtap="selectOption"
+              data-option="{{option}}"
+              hover-class="option-hover">
+          <view class="option-content">
+            <rich-text class="option-text" nodes="{{optionsHtml[optIndex]}}"></rich-text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
   
+  <!-- 按钮区域 -->
   <view class="button-group">
     <button class="btn submit-btn" bindtap="submitAnswer" disabled="{{!selectedAnswer}}">
       提交答案

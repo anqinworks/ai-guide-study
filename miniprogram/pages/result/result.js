@@ -1,13 +1,17 @@
 // pages/result/result.js
 const request = require('../../utils/request')
 const feedback = require('../../utils/feedback')
+const richTextParser = require('../../utils/richTextParser')
 
 Page({
   data: {
     correct: false,
     userAnswer: '',
+    userAnswerHtml: '',
     correctAnswer: '',
+    correctAnswerHtml: '',
     explanation: '',
+    explanationHtml: '',
     hasNext: false
   },
 
@@ -58,11 +62,19 @@ Page({
       correctAnswer = currentCard.options ? (currentCard.options[0] || '无正确答案') : '无正确答案'
     }
     
+    // 解析富文本内容
+    const explanationHtml = richTextParser.parseRichText(currentCard.explanation || '')
+    const correctAnswerHtml = richTextParser.parseRichText(correctAnswer || '')
+    const userAnswerHtml = richTextParser.parseRichText(answerResult ? answerResult.userAnswer || '' : '')
+    
     this.setData({
       correct: options.correct === 'true',
       userAnswer: answerResult ? answerResult.userAnswer || '' : '',
+      userAnswerHtml: userAnswerHtml,
       correctAnswer: correctAnswer,
+      correctAnswerHtml: correctAnswerHtml,
       explanation: currentCard.explanation || '',
+      explanationHtml: explanationHtml,
       hasNext: hasNext
     })
   },

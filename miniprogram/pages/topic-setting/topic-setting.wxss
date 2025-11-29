@@ -161,6 +161,74 @@
   padding-top: 20rpx;
 }
 
+.section-header {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-icon {
+  font-size: 24rpx;
+  color: #999;
+  margin-left: auto;
+}
+
+/* 扩展选项 */
+.extended-options {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 2rpx dashed #e8e8e8;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000rpx;
+  }
+}
+
+.extended-option-item {
+  margin-bottom: 32rpx;
+}
+
+.extended-option-label {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.extended-option-input {
+  width: 100%;
+  min-height: 120rpx;
+  padding: 20rpx;
+  background-color: #f8f9fa;
+  border: 2rpx solid #e8e8e8;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.extended-option-input:focus {
+  border-color: #FF7A45;
+  background-color: #fff;
+}
+
+.extended-option-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
 .option-item {
   display: flex;
   justify-content: space-between;

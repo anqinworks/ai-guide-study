@@ -6,27 +6,39 @@ const axios = require('axios');
 const config = require('../config/config');
 const taskManager = require('../utils/taskManager');
 const { v4: uuidv4 } = require('uuid');
+const { parseAllParameters } = require('../utils/parameterParser');
+const { mapParametersToRules, generateEnhancedPrompt } = require('../utils/generationMapper');
+const { validateAll } = require('../utils/contentValidator');
+const { cacheParameterParse, cacheMappingRules } = require('../utils/performanceCache');
 
 // 生成问答卡片 - 使用认证中间件确保数据安全，支持异步任务和进度跟踪
 router.post('/generate', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { topic, difficulty, count, subject = 'default' } = req.body;
-    
+    const {
+      topic,
+      difficulty,
+      count,
+      subject = 'default',
+      learningGoals = '',      // 学习目标
+      knowledgePoints = '',     // 知识点范围
+      questionTypes = ''        // 题型要求
+    } = req.body;
+
     // 验证参数
     if (!topic || !difficulty || !count) {
       return res.status(400).json({ message: '参数不全' });
     }
-    
+
     // 验证count参数范围，防止恶意请求
     const cardCount = parseInt(count);
     if (isNaN(cardCount) || cardCount < 1 || cardCount > 50) {
       return res.status(400).json({ message: '卡片数量必须在1-50之间' });
     }
-    
+
     // 生成任务ID
     const taskId = `generate_${userId}_${Date.now()}_${uuidv4()}`;
-    
+
     // 创建任务
     taskManager.createTask(taskId, {
       userId: userId,
@@ -34,31 +46,31 @@ router.post('/generate', authenticate, async (req, res) => {
       difficulty: difficulty,
       count: cardCount
     });
-    
+
     // 立即返回任务ID，让前端开始轮询进度
-    res.status(202).json({ 
+    res.status(202).json({
       taskId: taskId,
       message: '生成任务已创建，请使用taskId查询进度'
     });
-    
+
     // 异步执行生成任务
-    generateCardsAsync(taskId, userId, topic, difficulty, cardCount, subject)
+    generateCardsAsync(taskId, userId, topic, difficulty, cardCount, subject, learningGoals, knowledgePoints, questionTypes)
       .catch(error => {
         console.error(`[生成任务] 任务 ${taskId} 执行失败:`, error);
         taskManager.failTask(taskId, error.message || '生成失败');
       });
-    
+
   } catch (error) {
     console.error('Generate QA cards error:', error);
     res.status(500).json({ message: '创建生成任务失败: ' + error.message });
   }
 });
 
-// 异步生成卡片任务
-async function generateCardsAsync(taskId, userId, topic, difficulty, count, subject) {
+// 异步生成卡片任务 - 增强版，支持学习目标、知识点范围、题型要求
+async function generateCardsAsync(taskId, userId, topic, difficulty, count, subject, learningGoals = '', knowledgePoints = '', questionTypes = '') {
   try {
     taskManager.updateProgress(taskId, 5, '正在初始化生成任务...');
-    
+
     // 保存主题
     taskManager.updateProgress(taskId, 10, '正在保存学习主题...');
     const savedTopic = await db.Topic.create({
@@ -67,39 +79,39 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
       difficulty,
       cardCount: count
     });
-    
+
     taskManager.updateProgress(taskId, 20, '正在准备智能生成引擎...');
-    
+
     // 根据科目选择AI模型
     const aiModel = config.aiSubjectMapping[subject] || config.aiSubjectMapping.default;
     const aiConfig = config.ai[aiModel];
-    
+
     // 调用AI接口生成问答内容
     let generatedCards = [];
-    
+
     try {
       taskManager.updateProgress(taskId, 30, '正在调用AI智能生成题目内容...');
-      
+
       // 根据不同的AI模型调用不同的API
       switch (aiModel) {
         case 'qwen':
-          // 调用阿里通义千问API
-          let aiCards = await callQwenAPI(topic, difficulty, count, aiConfig, (progress, message) => {
-            // AI生成进度回调：30% - 70%
-            const overallProgress = 30 + Math.floor(progress * 0.4);
+          // 调用阿里通义千问API（系统性增强版）
+          let aiCards = await callQwenAPI(topic, difficulty, count, aiConfig, learningGoals, knowledgePoints, questionTypes, (progress, message) => {
+            // AI生成进度回调：30% - 90%（包含参数解析、映射、验证）
+            const overallProgress = 30 + Math.floor(progress * 0.6);
             taskManager.updateProgress(taskId, overallProgress, message);
           });
-          
+
           // 检查AI返回的卡片数量
           if (aiCards && aiCards.length > 0) {
             taskManager.updateProgress(taskId, 70, `已生成 ${aiCards.length} 道题目，正在优化内容...`);
-            
+
             // 为每张卡片添加topicId字段
             generatedCards = aiCards.map(card => ({
               ...card,
               topicId: savedTopic.id
             }));
-            
+
             // 如果AI生成的卡片数量不足，使用模拟数据补充
             if (generatedCards.length < count) {
               console.warn(`AI只生成了${generatedCards.length}张卡片，需要补充${count - generatedCards.length}张`);
@@ -125,14 +137,30 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
       // AI接口调用失败时，使用模拟数据确保系统可用性
       generatedCards = generateMockCards(topic, difficulty, count, savedTopic.id);
     }
+
+    taskManager.updateProgress(taskId, 80, '正在批量保存题目到学习库...');
+
+    // 优化：分批保存到数据库（每批100条），提升性能
+    const BATCH_SIZE = 100;
+    const savedCards = [];
     
-    taskManager.updateProgress(taskId, 80, '正在保存题目到学习库...');
-    
-    // 保存到数据库
-    const savedCards = await db.QACard.bulkCreate(generatedCards);
-    
+    if (generatedCards.length > BATCH_SIZE) {
+      // 大批量数据分批处理
+      for (let i = 0; i < generatedCards.length; i += BATCH_SIZE) {
+        const batch = generatedCards.slice(i, i + BATCH_SIZE);
+        const batchSaved = await db.QACard.bulkCreate(batch);
+        savedCards.push(...batchSaved);
+        const progress = 80 + Math.floor((i / generatedCards.length) * 10);
+        taskManager.updateProgress(taskId, progress, `正在保存题目 ${Math.min(i + BATCH_SIZE, generatedCards.length)}/${generatedCards.length}...`);
+      }
+    } else {
+      // 小批量数据直接保存
+      const batchSaved = await db.QACard.bulkCreate(generatedCards);
+      savedCards.push(...batchSaved);
+    }
+
     taskManager.updateProgress(taskId, 90, '正在整理题目数据...');
-    
+
     // 转换数据格式，确保返回给前端的卡片数据包含所有必要字段
     const cardsToReturn = savedCards.map(card => {
       // 确保options是数组，处理PostgreSQL ARRAY类型的序列化问题
@@ -162,10 +190,10 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
         // 如果options不是数组，使用默认选项
         options = ['A. 选项1', 'B. 选项2', 'C. 选项3', 'D. 选项4'];
       }
-      
+
       // 确保correctAnswer是完整的选项文本，而不仅仅是选项字母
       let correctAnswer = card.correctAnswer;
-      
+
       // 处理correctAnswer为空的情况
       if (!correctAnswer) {
         console.warn('correctAnswer为空，使用第一个选项作为默认正确答案');
@@ -173,8 +201,8 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
       } else if (correctAnswer.length === 1) {
         // 如果correctAnswer只是一个字母（如"A"），查找对应的完整选项
         const optionLetter = correctAnswer.toUpperCase();
-        const matchingOption = options.find(opt => 
-          opt.startsWith(`${optionLetter}.`) || 
+        const matchingOption = options.find(opt =>
+          opt.startsWith(`${optionLetter}.`) ||
           opt === optionLetter ||
           opt.startsWith(optionLetter)
         );
@@ -186,7 +214,7 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
           correctAnswer = options[0] || '无正确答案';
         }
       }
-      
+
       return {
         id: card.id,
         topicId: card.topicId,
@@ -199,14 +227,14 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
         updatedAt: card.updatedAt
       };
     });
-    
+
     taskManager.updateProgress(taskId, 100, '题目生成完成，准备开始学习！');
-    
+
     // 完成任务并保存结果
     taskManager.completeTask(taskId, {
       cards: cardsToReturn
     });
-    
+
     console.log(`[生成任务] 任务 ${taskId} 成功完成，生成了 ${cardsToReturn.length} 张卡片`);
   } catch (error) {
     console.error(`[生成任务] 任务 ${taskId} 执行失败:`, error);
@@ -220,18 +248,18 @@ router.get('/progress/:taskId', authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
     const { taskId } = req.params;
-    
+
     const task = taskManager.getTask(taskId);
-    
+
     if (!task) {
       return res.status(404).json({ message: '任务不存在或已过期' });
     }
-    
+
     // 验证任务所有权
     if (task.userId !== userId) {
       return res.status(403).json({ message: '无权访问此任务' });
     }
-    
+
     // 返回任务状态
     res.status(200).json({
       taskId: taskId,
@@ -247,36 +275,42 @@ router.get('/progress/:taskId', authenticate, async (req, res) => {
   }
 });
 
-// 调用阿里通义千问API生成问答卡片
-async function callQwenAPI(topic, difficulty, count, aiConfig, progressCallback) {
-  console.log('调用阿里通义千问API生成问答卡片:', topic, difficulty, count);
+// 调用阿里通义千问API生成问答卡片 - 系统性增强版
+async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '', knowledgePoints = '', questionTypes = '', progressCallback) {
+  console.log('调用阿里通义千问API生成问答卡片（增强版）:', { topic, difficulty, count, learningGoals, knowledgePoints, questionTypes });
   
   if (progressCallback) {
-    progressCallback(10, '正在连接AI智能服务...');
+    progressCallback(10, '正在解析输入参数...');
   }
   
-  // 构建AI请求提示词
-  const prompt = `请为${topic}主题生成${count}道${difficulty}难度的选择题，每道题需要包含：
-1. 一个清晰的问题
-2. 4个选项（A、B、C、D），每个选项需要包含完整的选项内容
-3. 正确答案（仅选项字母，如A）
-4. 详细的答案解析
+  // 1. 参数解析（使用缓存优化性能）
+  const parsedParams = cacheParameterParse(learningGoals, knowledgePoints, questionTypes, difficulty);
+  console.log('[参数解析] 解析结果:', JSON.stringify(parsedParams, null, 2));
+  
+  if (progressCallback) {
+    progressCallback(15, '正在建立参数映射规则...');
+  }
+  
+  // 2. 映射机制（使用缓存优化性能）
+  const rules = cacheMappingRules(parsedParams);
+  console.log('[映射机制] 生成规则:', JSON.stringify(rules, null, 2));
+  
+  if (progressCallback) {
+    progressCallback(20, '正在构建增强的生成提示词...');
+  }
+  
+  // 3. 生成增强的提示词
+  const prompt = generateEnhancedPrompt(topic, difficulty, count, parsedParams, rules);
+  
+  if (progressCallback) {
+    progressCallback(25, '正在连接AI智能服务...');
+  }
 
-请按照以下JSON格式返回，不要添加任何额外内容：
-[
-  {
-    "question": "问题内容",
-    "options": ["A. 选项内容", "B. 选项内容", "C. 选项内容", "D. 选项内容"],
-    "correctAnswer": "A",
-    "explanation": "答案解析"
-  }
-]`;
-  
   try {
     if (progressCallback) {
-      progressCallback(30, '正在向AI发送生成请求...');
+      progressCallback(30, '正在向AI发送增强的生成请求...');
     }
-    
+
     // 调用阿里通义千问API
     const response = await axios.post(aiConfig.apiUrl, {
       model: "qwen-turbo",
@@ -292,16 +326,17 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, progressCallback)
       headers: {
         'Authorization': `Bearer ${aiConfig.apiKey}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 30000 // 30秒超时，提升响应速度
     });
-    
+
     if (progressCallback) {
       progressCallback(60, '正在接收并解析AI生成的内容...');
     }
-    
+
     // 解析AI响应
     const aiResponse = response.data;
-    
+
     if (aiResponse.output && aiResponse.output.text) {
       // 提取JSON内容
       const jsonMatch = aiResponse.output.text.match(/\[\s*\{[\s\S]*\}\s*\]/);
@@ -313,13 +348,13 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, progressCallback)
           console.error('解析AI响应JSON失败:', parseError);
           throw new Error('AI响应JSON格式错误');
         }
-        
+
         if (progressCallback) {
           progressCallback(80, '正在验证题目内容质量...');
         }
-        
-        // 验证并修复生成的卡片
-        const validCards = generatedCards.map(card => {
+
+        // 基础验证和修复
+        let validCards = generatedCards.map(card => {
           // 确保options是数组且有4个选项
           let options = card.options || [];
           if (!Array.isArray(options) || options.length < 4) {
@@ -331,14 +366,96 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, progressCallback)
               'D. 选项4'
             ];
           }
-          
+
           return {
             ...card,
             options,
             difficulty
           };
         });
-        
+
+        // 4. 内容验证 - 多维度检查
+        if (progressCallback) {
+          progressCallback(85, '正在进行多维度内容验证...');
+        }
+
+        const validationResult = validateAll(validCards, parsedParams);
+        console.log('[内容验证] 验证结果:', JSON.stringify(validationResult, null, 2));
+
+        // 如果验证不通过，记录警告但继续使用生成的卡片
+        if (!validationResult.valid) {
+          console.warn('[内容验证] 验证未完全通过:', validationResult.summary);
+          
+          // 如果综合得分太低（< 0.6），尝试重新生成
+          if (validationResult.overallScore < 0.6 && count <= 10) {
+            console.log('[内容验证] 综合得分过低，尝试重新生成...');
+            if (progressCallback) {
+              progressCallback(50, '内容质量不足，正在重新生成...');
+            }
+            
+            // 重新生成一次（最多重试1次）
+            try {
+              const retryPrompt = prompt + `\n\n【重要提醒】\n上一轮生成的内容与要求匹配度不足，请确保：\n1. 每道题目必须明确关联学习目标\n2. 必须覆盖所有指定的知识点\n3. 必须符合题型要求\n4. 难度必须匹配${difficulty}级别\n\n请重新生成，确保严格符合要求。`;
+              
+              const retryResponse = await axios.post(aiConfig.apiUrl, {
+                model: "qwen-turbo",
+                input: { prompt: retryPrompt },
+                parameters: {
+                  temperature: 0.5, // 降低温度，提高一致性
+                  top_p: 0.9,
+                  max_tokens: 2048
+                }
+              }, {
+                headers: {
+                  'Authorization': `Bearer ${aiConfig.apiKey}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (retryResponse.data.output && retryResponse.data.output.text) {
+                const retryJsonMatch = retryResponse.data.output.text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+                if (retryJsonMatch) {
+                  const retryCards = JSON.parse(retryJsonMatch[0]);
+                  const retryValidCards = retryCards.map(card => {
+                    let options = card.options || [];
+                    if (!Array.isArray(options) || options.length < 4) {
+                      options = ['A. 选项1', 'B. 选项2', 'C. 选项3', 'D. 选项4'];
+                    }
+                    return { ...card, options, difficulty };
+                  });
+
+                  const retryValidation = validateAll(retryValidCards, parsedParams);
+                  console.log('[内容验证] 重试验证结果:', JSON.stringify(retryValidation, null, 2));
+
+                  // 如果重试结果更好，使用重试结果
+                  if (retryValidation.overallScore > validationResult.overallScore) {
+                    validCards = retryValidCards;
+                    console.log('[内容验证] 使用重试生成的结果');
+                  }
+                }
+              }
+            } catch (retryError) {
+              console.error('[内容验证] 重试生成失败:', retryError);
+              // 继续使用原始结果
+            }
+          }
+        } else {
+          console.log('[内容验证] 验证通过:', validationResult.summary);
+        }
+
+        // 记录验证信息到卡片（用于后续分析）
+        validCards = validCards.map((card, index) => ({
+          ...card,
+          _validation: {
+            knowledgeCoverage: validationResult.validations.knowledgeCoverage.details.find(d => d.cardIndex === index),
+            goalRelevance: validationResult.validations.goalRelevance.details.find(d => d.cardIndex === index)
+          }
+        }));
+
+        if (progressCallback) {
+          progressCallback(95, `验证完成，综合得分：${(validationResult.overallScore * 100).toFixed(1)}%`);
+        }
+
         return validCards;
       } else {
         throw new Error('AI响应格式错误，无法提取JSON');
@@ -356,7 +473,7 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, progressCallback)
 // 生成模拟问答卡片
 function generateMockCards(topic, difficulty, count, topicId) {
   const generatedCards = [];
-  
+
   // 生成更真实的模拟数据
   const mockQuestions = {
     'JavaScript基础': [
@@ -552,10 +669,10 @@ function generateMockCards(topic, difficulty, count, topicId) {
       }
     ]
   };
-  
+
   // 根据主题选择合适的模拟问题
   let topicQuestions;
-  
+
   // 检查主题是否在模拟问题列表中
   if (mockQuestions[topic]) {
     topicQuestions = mockQuestions[topic];
@@ -578,11 +695,11 @@ function generateMockCards(topic, difficulty, count, topicId) {
       topicQuestions = mockQuestions['JavaScript基础'];
     }
   }
-  
+
   for (let i = 0; i < count; i++) {
     // 循环使用可用的模拟问题
     const questionData = topicQuestions[i % topicQuestions.length];
-    
+
     const qaCard = {
       topicId,
       question: questionData.question,
@@ -591,10 +708,10 @@ function generateMockCards(topic, difficulty, count, topicId) {
       explanation: questionData.explanation,
       difficulty
     };
-    
+
     generatedCards.push(qaCard);
   }
-  
+
   return generatedCards;
 }
 

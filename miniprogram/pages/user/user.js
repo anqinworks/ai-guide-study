@@ -137,6 +137,11 @@ Page({
   },
 
   logout() {
+    // 清除认证缓存
+    const request = require('../../utils/request')
+    if (request.clearAuthCache) {
+      request.clearAuthCache()
+    }
     const app = getApp()
     app.globalData.userInfo = null
     app.globalData.token = ''

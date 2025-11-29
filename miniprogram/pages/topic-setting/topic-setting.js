@@ -15,7 +15,12 @@ Page({
     progress: 0,
     progressMessage: '',
     taskId: null,
-    progressTimer: null
+    progressTimer: null,
+    // 高级选项
+    showAdvancedOptions: false,
+    learningGoals: '',
+    knowledgePoints: '',
+    questionTypes: ''
   },
 
   onLoad() {
@@ -80,11 +85,14 @@ Page({
         cardCount: this.data.cardCount
       })
       
-      // 启动生成任务（异步）
+      // 启动生成任务（异步）- 包含高级选项
       const res = await request.authPost('/ai-qa/generate', {
         topic: this.data.topic,
         difficulty: this.data.difficulty,
-        count: this.data.cardCount
+        count: this.data.cardCount,
+        learningGoals: this.data.learningGoals || '',
+        knowledgePoints: this.data.knowledgePoints || '',
+        questionTypes: this.data.questionTypes || ''
       })
       
       // 获取任务ID
@@ -222,6 +230,34 @@ Page({
       }
       // 其他错误继续轮询，可能是网络问题
     }
+  },
+
+  // 切换高级选项显示
+  toggleAdvancedOptions() {
+    this.setData({
+      showAdvancedOptions: !this.data.showAdvancedOptions
+    })
+  },
+
+  // 学习目标输入
+  onLearningGoalsInput(e) {
+    this.setData({
+      learningGoals: e.detail.value
+    })
+  },
+
+  // 知识点范围输入
+  onKnowledgePointsInput(e) {
+    this.setData({
+      knowledgePoints: e.detail.value
+    })
+  },
+
+  // 题型要求输入
+  onQuestionTypesInput(e) {
+    this.setData({
+      questionTypes: e.detail.value
+    })
   },
 
   // 页面卸载时清理定时器

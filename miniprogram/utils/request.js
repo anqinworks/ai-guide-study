@@ -65,31 +65,57 @@ const request = (url, method, data = {}) => {
   })
 }
 
-// 检查用户是否登录 - 必须在request函数定义之后
+// 认证状态缓存，避免重复验证
+let authCheckPromise = null;
+let authCheckTime = 0;
+const AUTH_CACHE_TIME = 5 * 60 * 1000; // 5分钟缓存
+
+// 检查用户是否登录 - 优化版，避免循环认证
 const checkAuth = () => {
   return new Promise((resolve, reject) => {
     const token = app.globalData.token || wx.getStorageSync('token')
-    if (token) {
-      // 验证token是否有效，使用现有的 /user/info 接口
-      request('/user/info', 'GET', {})
-        .then(data => {
-          // token有效，更新用户信息
-          app.globalData.userInfo = data.user
-          resolve(true)
-        })
-        .catch(err => {
-          console.error('验证token失败', err)
-          // token无效，清除本地存储
-          app.globalData.token = ''
-          app.globalData.userInfo = null
-          wx.removeStorageSync('token')
-          wx.removeStorageSync('userInfo')
-          reject(new Error('未授权，请先登录'))
-        })
-    } else {
+    
+    if (!token) {
       reject(new Error('未授权，请先登录'))
+      return
     }
+    
+    // 检查缓存：如果最近验证过且仍在有效期内，直接返回
+    const now = Date.now()
+    if (authCheckPromise && (now - authCheckTime) < AUTH_CACHE_TIME) {
+      authCheckPromise.then(resolve).catch(reject)
+      return
+    }
+    
+    // 创建新的验证Promise并缓存
+    authCheckPromise = request('/user/info', 'GET', {})
+      .then(data => {
+        // token有效，更新用户信息和缓存时间
+        app.globalData.userInfo = data.user
+        authCheckTime = Date.now()
+        return true
+      })
+      .catch(err => {
+        console.error('验证token失败', err)
+        // token无效，清除本地存储和缓存
+        app.globalData.token = ''
+        app.globalData.userInfo = null
+        authCheckPromise = null
+        authCheckTime = 0
+        wx.removeStorageSync('token')
+        wx.removeStorageSync('userInfo')
+        throw new Error('未授权，请先登录')
+      })
+    
+    authCheckTime = now
+    authCheckPromise.then(resolve).catch(reject)
   })
+}
+
+// 清除认证缓存（用于登出等情况）
+const clearAuthCache = () => {
+  authCheckPromise = null
+  authCheckTime = 0
 }
 
 // 带认证的请求 - 必须在request和checkAuth函数定义之后
@@ -124,5 +150,7 @@ module.exports = {
   authPut: (url, data) => authRequest(url, 'PUT', data),
   authDelete: (url, data) => authRequest(url, 'DELETE', data),
   // 检查登录状态
-  checkAuth
+  checkAuth,
+  // 清除认证缓存
+  clearAuthCache
 }

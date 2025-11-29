@@ -1,31 +1,47 @@
 <!-- pages/result/result.wxml -->
 <view class="container">
-  <!-- 方案1：简约现代风格 -->
-  <view class="result-card scheme-1">
-    <view class="result-icon {{correct ? 'correct' : 'wrong'}}">
-      {{correct ? '✓' : '✗'}}
+  <!-- 结果卡片 -->
+  <view class="result-card">
+    <!-- 结果图标和标题 -->
+    <view class="result-header">
+      <view class="result-icon {{correct ? 'correct' : 'wrong'}}">
+        {{correct ? '✓' : '✗'}}
+      </view>
+      <text class="result-title {{correct ? 'correct' : 'wrong'}}">
+        {{correct ? '回答正确！' : '回答错误！'}}
+      </text>
     </view>
     
-    <text class="result-title {{correct ? 'correct' : 'wrong'}}">
-      {{correct ? '回答正确！' : '回答错误！'}}
-    </text>
-    
-    <view class="answer-info">
-      <text class="info-label">你的答案</text>
-      <text class="info-content">{{userAnswer}}</text>
+    <!-- 答案对比区域 -->
+    <view class="answer-comparison">
+      <view class="answer-item">
+        <text class="answer-label">你的答案</text>
+        <view class="answer-content">
+          <rich-text class="answer-text" nodes="{{userAnswerHtml}}"></rich-text>
+        </view>
+      </view>
+      
+      <view class="answer-item">
+        <text class="answer-label">正确答案</text>
+        <view class="answer-content correct">
+          <rich-text class="answer-text" nodes="{{correctAnswerHtml}}"></rich-text>
+        </view>
+      </view>
     </view>
     
-    <view class="answer-info">
-      <text class="info-label">正确答案</text>
-      <text class="info-content correct">{{correctAnswer}}</text>
-    </view>
-    
+    <!-- 详细解析区域 -->
     <view class="explanation-section">
-      <text class="section-title">答案解析</text>
-      <text class="explanation">{{explanation}}</text>
+      <view class="explanation-header">
+        <text class="explanation-icon">📚</text>
+        <text class="explanation-title">详细解析</text>
+      </view>
+      <view class="explanation-content">
+        <rich-text class="explanation-text" nodes="{{explanationHtml}}"></rich-text>
+      </view>
     </view>
   </view>
   
+  <!-- 按钮区域 -->
   <view class="button-group">
     <button class="btn next-btn" bindtap="goToNext">
       {{hasNext ? '下一题' : '查看报告'}}

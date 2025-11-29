@@ -1,5 +1,6 @@
 // pages/report/report.js
 const feedback = require('../../utils/feedback')
+const richTextParser = require('../../utils/richTextParser')
 
 Page({
   data: {
@@ -56,13 +57,21 @@ Page({
       return sum + (parseInt(q.elapsedTime) || 0);
     }, 0) / 1000; // 转换为秒
     
-    // 收集错题
+    // 收集错题，并解析Markdown格式
     const wrongQuestions = [];
     sessionData.questions.forEach(question => {
       if (!question.isCorrect) {
+        const questionText = question.question || '题目内容未找到';
+        const correctAnswerText = question.correctAnswer || '未找到正确答案';
+        const explanationText = question.explanation || '';
+        
         wrongQuestions.push({
-          question: question.question || '题目内容未找到',
-          correctAnswer: question.correctAnswer || '未找到正确答案'
+          question: questionText,
+          questionHtml: richTextParser.parseRichText(questionText),
+          correctAnswer: correctAnswerText,
+          correctAnswerHtml: richTextParser.parseRichText(correctAnswerText),
+          explanation: explanationText,
+          explanationHtml: explanationText ? richTextParser.parseRichText(explanationText) : ''
         });
       }
     });
@@ -128,13 +137,21 @@ Page({
     }, 0);
     const totalTime = Math.round((totalTimeMs / 1000) * 10) / 10;
     
-    // 收集错题
+    // 收集错题，并解析Markdown格式
     const wrongQuestions = [];
     validResults.forEach((result, index) => {
       if (result && !result.isCorrect && qaCards[index]) {
+        const questionText = qaCards[index].question || '题目内容未找到';
+        const correctAnswerText = qaCards[index].correctAnswer || '未找到正确答案';
+        const explanationText = qaCards[index].explanation || '';
+        
         wrongQuestions.push({
-          question: qaCards[index].question || '题目内容未找到',
-          correctAnswer: qaCards[index].correctAnswer || '未找到正确答案'
+          question: questionText,
+          questionHtml: richTextParser.parseRichText(questionText),
+          correctAnswer: correctAnswerText,
+          correctAnswerHtml: richTextParser.parseRichText(correctAnswerText),
+          explanation: explanationText,
+          explanationHtml: explanationText ? richTextParser.parseRichText(explanationText) : ''
         });
       }
     });
