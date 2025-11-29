@@ -1,0 +1,119 @@
+<!-- pages/topic-setting/topic-setting.wxml -->
+<view class="container">
+  <!-- 主题信息卡片 -->
+  <view class="topic-info">
+    <view class="topic-header">
+      <text class="topic-icon">📚</text>
+      <text class="topic-label">学习主题</text>
+    </view>
+    <text class="topic-content">{{topic}}</text>
+    <view class="topic-decoration"></view>
+  </view>
+
+  <!-- 难度设置 -->
+  <view class="setting-section">
+    <view class="section-header">
+      <text class="section-icon">🎯</text>
+      <text class="section-title">难度设置</text>
+    </view>
+    <view class="difficulty-options">
+      <view class="difficulty-item {{difficulty === '简单' ? 'selected' : ''}}" bindtap="selectDifficulty" data-difficulty="简单">
+        <text class="difficulty-icon">😊</text>
+        <text class="difficulty-text">简单</text>
+        <text class="difficulty-desc">适合初学者</text>
+      </view>
+      <view class="difficulty-item {{difficulty === '中等' ? 'selected' : ''}}" bindtap="selectDifficulty" data-difficulty="中等">
+        <text class="difficulty-icon">😐</text>
+        <text class="difficulty-text">中等</text>
+        <text class="difficulty-desc">适合有基础者</text>
+      </view>
+      <view class="difficulty-item {{difficulty === '困难' ? 'selected' : ''}}" bindtap="selectDifficulty" data-difficulty="困难">
+        <text class="difficulty-icon">😎</text>
+        <text class="difficulty-text">困难</text>
+        <text class="difficulty-desc">适合进阶者</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 卡片数量设置 -->
+  <view class="setting-section">
+    <view class="section-header">
+      <text class="section-icon">📋</text>
+      <text class="section-title">卡片数量</text>
+    </view>
+    <view class="slider-container">
+      <view class="slider-info">
+        <text class="slider-label">生成 {{cardCount}} 张卡片</text>
+        <text class="slider-value">{{cardCount}}</text>
+      </view>
+      <slider min="1" max="20" value="{{cardCount}}" bindchange="onCardCountChange" activeColor="#FF7A45" backgroundColor="#E8E8E8" block-size="32" block-color="#FF7A45"></slider>
+      <view class="slider-range">
+        <text class="range-min">1张</text>
+        <text class="range-max">20张</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 高级设置 -->
+  <view class="setting-section">
+    <view class="section-header">
+      <text class="section-icon">⚙️</text>
+      <text class="section-title">高级设置</text>
+    </view>
+    <view class="advanced-options">
+      <view class="option-item">
+        <view class="option-info">
+          <text class="option-title">自动播放</text>
+          <text class="option-desc">生成卡片后自动开始学习</text>
+        </view>
+        <switch checked="{{autoPlay}}" bindchange="onAutoPlayChange" color="#FF7A45"></switch>
+      </view>
+      <view class="option-item">
+        <view class="option-info">
+          <text class="option-title">语音提示</text>
+          <text class="option-desc">播放题目和答案的语音提示</text>
+        </view>
+        <switch checked="{{voicePrompt}}" bindchange="onVoicePromptChange" color="#FF7A45"></switch>
+      </view>
+    </view>
+  </view>
+
+  <!-- 生成按钮 -->
+  <button class="generate-btn" bindtap="generateCards" hover-class="btn-hover" disabled="{{loading}}">
+    <text class="btn-text">{{loading ? '生成中...' : '生成问答卡片✨'}}</text>
+    <text class="btn-icon" wx:if="{{!loading}}"></text>
+  </button>
+
+  <!-- 进度显示遮罩层 -->
+  <view class="progress-overlay" wx:if="{{showProgress}}">
+    <view class="progress-container">
+      <!-- 加载动画 -->
+      <view class="loading-animation">
+        <view class="spinner">
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+          <view class="spinner-item"></view>
+        </view>
+      </view>
+      
+      <!-- 进度信息 -->
+      <view class="progress-info">
+        <text class="progress-title">正在生成学习题目</text>
+        <text class="progress-message">{{progressMessage}}</text>
+        
+        <!-- 进度条 -->
+        <view class="progress-bar-container">
+          <view class="progress-bar-bg">
+            <view class="progress-bar-fill" style="width: {{progress}}%"></view>
+          </view>
+          <text class="progress-percentage">{{progress}}%</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

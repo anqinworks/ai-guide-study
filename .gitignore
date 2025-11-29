@@ -1,0 +1,16 @@
+## ide
+**/.idea
+**/miniprogram/.idea
+**/backend/node_modules
+**/.trae
+*.iml
+
+## backend
+**/target
+**/logs
+**/dist
+**/node_modules
+
+## front
+node_modules
+*.zip

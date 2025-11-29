@@ -1,0 +1,69 @@
+<!-- pages/answer-record/answer-record.wxml -->
+<view class="container">
+  <view class="header">
+    <text class="title">答题记录</text>
+  </view>
+
+  <!-- 加载中状态 -->
+  <view wx:if="{{loading && answerRecords.length === 0}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- 答题记录列表 -->
+  <view class="record-list" wx:elif="{{answerRecords.length > 0}}">
+    <view wx:for="{{answerRecords}}" wx:key="id" class="record-item" bindtap="toggleRecord" data-id="{{item.id}}">
+      <view class="record-header">
+        <view class="record-info">
+          <text class="record-time">{{item.answerTime}}</text>
+          <text class="record-topic">{{item.topic}}</text>
+        </view>
+        <view class="record-stats">
+          <text class="stats-text">共{{item.totalQuestions}}题</text>
+          <text class="stats-text accuracy">{{item.accuracy}}</text>
+        </view>
+      </view>
+      
+      <!-- 实时统计信息 -->
+      <view class="real-time-stats">
+        <view class="stat-item">
+          <text class="stat-label">答对</text>
+          <text class="stat-value correct" animation="{{item.correctAnimation}}">{{item.correctCount}}题</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-label">答错</text>
+          <text class="stat-value wrong" animation="{{item.wrongAnimation}}">{{item.wrongCount}}题</text>
+        </view>
+      </view>
+      
+      <!-- 展开内容 -->
+      <view class="record-content" wx:if="{{item.expanded}}">
+        <view class="expanded-info">
+          <view class="info-item">
+            <text class="label">答题详情</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 查看详情按钮 -->
+      <view class="detail-btn" catchtap="viewDetail" data-id="{{item.id}}">
+        <text>查看详情</text>
+        <text class="arrow">→</text>
+      </view>
+    </view>
+    
+    <!-- 加载更多 -->
+    <view class="load-more">
+      <text wx:if="{{loading}}" class="loading-text">加载中...</text>
+      <text wx:elif="{{hasMore}}" class="load-text" bindtap="loadMore">加载更多</text>
+      <text wx:else class="no-more-text">已加载全部</text>
+    </view>
+  </view>
+  
+  <!-- 无记录提示 -->
+  <view wx:else class="empty-state">
+    <view class="empty-icon">📝</view>
+    <text class="empty-text">暂无答题记录，快去答题吧~</text>
+    <button class="go-answer-btn" bindtap="goToHome">开始答题</button>
+  </view>
+</view>

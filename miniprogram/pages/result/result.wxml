@@ -1,0 +1,34 @@
+<!-- pages/result/result.wxml -->
+<view class="container">
+  <!-- 方案1：简约现代风格 -->
+  <view class="result-card scheme-1">
+    <view class="result-icon {{correct ? 'correct' : 'wrong'}}">
+      {{correct ? '✓' : '✗'}}
+    </view>
+    
+    <text class="result-title {{correct ? 'correct' : 'wrong'}}">
+      {{correct ? '回答正确！' : '回答错误！'}}
+    </text>
+    
+    <view class="answer-info">
+      <text class="info-label">你的答案</text>
+      <text class="info-content">{{userAnswer}}</text>
+    </view>
+    
+    <view class="answer-info">
+      <text class="info-label">正确答案</text>
+      <text class="info-content correct">{{correctAnswer}}</text>
+    </view>
+    
+    <view class="explanation-section">
+      <text class="section-title">答案解析</text>
+      <text class="explanation">{{explanation}}</text>
+    </view>
+  </view>
+  
+  <view class="button-group">
+    <button class="btn next-btn" bindtap="goToNext">
+      {{hasNext ? '下一题' : '查看报告'}}
+    </button>
+  </view>
+</view>

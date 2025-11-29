@@ -1,0 +1,457 @@
+/* pages/result/result.wxss */
+
+/* 全局变量 */
+:root {
+  --primary-color: #FF7A45;
+  --primary-light: rgba(255, 122, 69, 0.1);
+  --background-color: #f5f7fa;
+  --card-background: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e8e8e8;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #ff4d4f;
+}
+
+.container {
+  padding: 40rpx 32rpx;
+  background-color: var(--background-color);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 方案1：简约现代风格 */
+.result-card.scheme-1 {
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  border-radius: 24rpx;
+  padding: 64rpx 48rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.result-card.scheme-1:active {
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
+}
+
+/* 方案2：活力渐变风格 */
+.result-card.scheme-2 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 24rpx;
+  padding: 64rpx 48rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.result-card.scheme-2 .result-icon {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
+}
+
+.result-card.scheme-2 .result-title {
+  color: white;
+  text-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.2);
+}
+
+.result-card.scheme-2 .answer-info {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.result-card.scheme-2 .explanation-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-top: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 方案3：卡片堆叠风格 */
+.result-card.scheme-3 {
+  background: white;
+  border-radius: 24rpx;
+  padding: 64rpx 48rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
+  animation: slideIn 0.6s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card.scheme-3::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 122, 69, 0.05) 0%, rgba(255, 122, 69, 0.02) 100%);
+  z-index: 0;
+}
+
+.result-card.scheme-3 .result-icon,
+.result-card.scheme-3 .result-title,
+.result-card.scheme-3 .answer-info,
+.result-card.scheme-3 .explanation-section {
+  position: relative;
+  z-index: 1;
+}
+
+.result-card.scheme-3 .result-icon {
+  background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+  color: white;
+  box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.3);
+}
+
+.result-card.scheme-3 .answer-info {
+  background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+  border: none;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+/* 结果图标 */
+.result-icon {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 80rpx;
+  margin-bottom: 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: scaleIn 0.4s ease-out;
+}
+
+.result-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
+}
+
+.result-icon.correct {
+  background: linear-gradient(135deg, #E6F7E6 0%, #F6FFED 100%);
+  color: var(--success-color);
+}
+
+.result-icon.wrong {
+  background: linear-gradient(135deg, #FFF2F0 0%, #FFF1F0 100%);
+  color: var(--error-color);
+}
+
+.result-icon.neutral {
+  background: linear-gradient(135deg, #FFF7E6 0%, #FFFAF0 100%);
+  color: var(--primary-color);
+}
+
+/* 结果标题 */
+.result-title {
+  font-size: 44rpx;
+  font-weight: bold;
+  margin-bottom: 40rpx;
+  text-align: center;
+  line-height: 1.4;
+  animation: fadeIn 0.4s ease-out 0.2s both;
+}
+
+.result-title.correct {
+  color: var(--success-color);
+  text-shadow: 0 2rpx 4rpx rgba(82, 196, 26, 0.2);
+}
+
+.result-title.wrong {
+  color: var(--error-color);
+  text-shadow: 0 2rpx 4rpx rgba(255, 77, 79, 0.2);
+}
+
+.result-title.neutral {
+  color: var(--primary-color);
+  text-shadow: 0 2rpx 4rpx rgba(255, 122, 69, 0.2);
+}
+
+/* 答案信息 */
+.answer-info {
+  width: 100%;
+  margin: 24rpx 0;
+  background-color: var(--primary-light);
+  padding: 32rpx;
+  border-radius: 16rpx;
+  border-left: 8rpx solid var(--primary-color);
+  animation: fadeIn 0.4s ease-out 0.3s both;
+}
+
+.info-label {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  margin-bottom: 12rpx;
+  font-weight: 500;
+}
+
+.info-content {
+  display: block;
+  font-size: 32rpx;
+  color: var(--text-primary);
+  padding: 24rpx;
+  background-color: var(--card-background);
+  border-radius: 12rpx;
+  line-height: 1.6;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.info-content.correct {
+  color: var(--success-color);
+  background-color: #F6FFED;
+  border-left: 4rpx solid var(--success-color);
+}
+
+.info-content.wrong {
+  color: var(--error-color);
+  background-color: #FFF2F0;
+  border-left: 4rpx solid var(--error-color);
+}
+
+/* 解释区域 */
+.explanation-section {
+  width: 100%;
+  margin-top: 40rpx;
+  padding-top: 40rpx;
+  border-top: 2rpx solid var(--border-color);
+  animation: fadeIn 0.4s ease-out 0.4s both;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 24rpx;
+  color: var(--text-primary);
+}
+
+.explanation {
+  display: block;
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  background-color: var(--card-background);
+  padding: 32rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 按钮组 */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 24rpx;
+  margin-top: 40rpx;
+  animation: fadeIn 0.4s ease-out 0.5s both;
+}
+
+/* 按钮样式 */
+.btn {
+  flex: 1;
+  padding: 28rpx;
+  border-radius: 16rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.4s ease-out 0.6s both;
+}
+
+.next-btn {
+  background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+  color: white;
+  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.3);
+}
+
+.next-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 6rpx 16rpx rgba(255, 122, 69, 0.4);
+}
+
+.next-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.4);
+}
+
+.secondary-btn {
+  background: linear-gradient(135deg, #F0F0F0 0%, #E8E8E8 100%);
+  color: var(--text-primary);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.secondary-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.15);
+}
+
+.secondary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+}
+
+/* 分数显示 */
+.score-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 32rpx 0;
+  padding: 32rpx;
+  background: linear-gradient(135deg, var(--primary-light) 0%, #FFF7E6 100%);
+  border-radius: 20rpx;
+  width: 100%;
+  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.15);
+  animation: fadeIn 0.4s ease-out 0.3s both;
+}
+
+.score-label {
+  font-size: 30rpx;
+  color: var(--text-secondary);
+  margin-bottom: 16rpx;
+}
+
+.score-value {
+  font-size: 64rpx;
+  font-weight: bold;
+  color: var(--primary-color);
+  text-shadow: 0 2rpx 4rpx rgba(255, 122, 69, 0.2);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(40rpx) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 375rpx) {
+  .container {
+    padding: 32rpx 24rpx;
+  }
+  
+  .result-card {
+    padding: 48rpx 32rpx;
+  }
+  
+  .result-icon {
+    width: 120rpx;
+    height: 120rpx;
+    font-size: 64rpx;
+  }
+  
+  .result-title {
+    font-size: 36rpx;
+    margin-bottom: 32rpx;
+  }
+  
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .btn {
+    font-size: 30rpx;
+    padding: 24rpx;
+  }
+}
+
+/* 平板和桌面端响应式设计 */
+@media (min-width: 768rpx) {
+  .container {
+    padding: 60rpx 80rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .result-card {
+    max-width: 800rpx;
+    width: 100%;
+    padding: 80rpx 64rpx;
+  }
+  
+  .button-group {
+    max-width: 800rpx;
+    width: 100%;
+  }
+  
+  .result-icon {
+    width: 160rpx;
+    height: 160rpx;
+    font-size: 96rpx;
+  }
+  
+  .result-title {
+    font-size: 52rpx;
+  }
+  
+  .info-content {
+    font-size: 36rpx;
+  }
+  
+  .explanation {
+    font-size: 32rpx;
+  }
+  
+  .btn {
+    font-size: 36rpx;
+    padding: 32rpx;
+  }
+}

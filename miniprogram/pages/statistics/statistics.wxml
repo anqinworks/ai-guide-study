@@ -1,0 +1,241 @@
+<!-- pages/statistics/statistics.wxml -->
+<view class="container">
+  <view class="header">
+    <text class="title">学习统计</text>
+    <text class="update-time" wx:if="{{dataLastUpdated}}">更新于 {{dataLastUpdated}}</text>
+  </view>
+  
+  <!-- 加载状态 -->
+  <view class="loading-container" wx:if="{{loading}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+  
+  <!-- 错误状态 -->
+  <view class="error-container" wx:if="{{error && !loading}}">
+    <text class="error-icon">⚠️</text>
+    <text class="error-text">{{error}}</text>
+    <button class="retry-btn" bindtap="retryLoadData">重试</button>
+  </view>
+  
+  <!-- 数据展示 -->
+  <view class="data-container" wx:if="{{!loading && !error}}">
+    <!-- 核心统计指标 -->
+    <view class="stats-overview">
+      <view class="stat-card" style="animation-delay: 0.1s">
+        <view class="stat-icon">📊</view>
+        <text class="stat-value">{{totalQuestions}}</text>
+        <text class="stat-label">答题总数</text>
+      </view>
+      <view class="stat-card correct" style="animation-delay: 0.2s">
+        <view class="stat-icon">✅</view>
+        <text class="stat-value">{{correctQuestions}}</text>
+        <text class="stat-label">正确题数</text>
+      </view>
+      <view class="stat-card wrong" style="animation-delay: 0.3s">
+        <view class="stat-icon">❌</view>
+        <text class="stat-value">{{wrongQuestions}}</text>
+        <text class="stat-label">错题数</text>
+      </view>
+      <view class="stat-card accuracy" style="animation-delay: 0.4s">
+        <view class="stat-icon">🎯</view>
+        <text class="stat-value">{{accuracy}}%</text>
+        <text class="stat-label">正确率</text>
+      </view>
+      <view class="stat-card time" style="animation-delay: 0.5s">
+        <view class="stat-icon">⏱️</view>
+        <text class="stat-value">{{averageTime}}s</text>
+        <text class="stat-label">平均用时</text>
+      </view>
+      <view class="stat-card study" style="animation-delay: 0.6s">
+        <view class="stat-icon">📚</view>
+        <text class="stat-value">{{totalStudyTimeMinutes}}</text>
+        <text class="stat-label">学习时长(分钟)</text>
+      </view>
+    </view>
+    
+    <!-- 数据验证提示 -->
+    <view class="validation-info" wx:if="{{isDataValid && dataValidationErrors.length === 0}}">
+      <text class="validation-icon">✅</text>
+      <text class="validation-text">数据已验证，统计准确</text>
+    </view>
+    
+    <view class="validation-warning" wx:if="{{dataValidationErrors.length > 0}}">
+      <text class="validation-icon">⚠️</text>
+      <text class="validation-text">检测到数据异常，已自动修正</text>
+    </view>
+    
+    <!-- 标签切换 -->
+    <view class="tabs-container" wx:if="{{totalQuestions > 0}}">
+      <view class="tab-item {{activeTab === 'overview' ? 'active' : ''}}" 
+            bindtap="switchTab" data-tab="overview">
+        <text>概览</text>
+      </view>
+      <view class="tab-item {{activeTab === 'trend' ? 'active' : ''}}" 
+            bindtap="switchTab" data-tab="trend">
+        <text>学习趋势</text>
+      </view>
+      <view class="tab-item {{activeTab === 'type' ? 'active' : ''}}" 
+            bindtap="switchTab" data-tab="type">
+        <text>题型分布</text>
+      </view>
+      <view class="tab-item {{activeTab === 'knowledge' ? 'active' : ''}}" 
+            bindtap="switchTab" data-tab="knowledge">
+        <text>知识掌握</text>
+      </view>
+    </view>
+    
+    <!-- 概览标签页 -->
+    <view class="tab-content" wx:if="{{activeTab === 'overview' && totalQuestions > 0}}">
+      <!-- 学习趋势图表（简化版） -->
+      <view class="chart-card" wx:if="{{trendData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">最近7天学习趋势</text>
+        </view>
+        <view class="trend-chart">
+          <view class="trend-item" wx:for="{{trendData}}" wx:key="date">
+            <view class="trend-bar-container">
+              <view class="trend-bar correct-bar" 
+                    style="height: {{item.questions > 0 ? (item.correct / item.questions * 100) : 0}}%"></view>
+              <view class="trend-bar wrong-bar" 
+                    style="height: {{item.questions > 0 ? ((item.questions - item.correct) / item.questions * 100) : 0}}%"></view>
+            </view>
+            <text class="trend-label">{{item.date}}</text>
+            <text class="trend-value">{{item.questions}}题</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 正确率分布 -->
+      <view class="chart-card" wx:if="{{accuracyData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">正确率分布</text>
+        </view>
+        <view class="accuracy-distribution">
+          <view class="accuracy-item" wx:for="{{accuracyData}}" wx:key="range" 
+                bindtap="viewChartDetail" data-type="accuracy" data-item="{{item}}">
+            <view class="accuracy-bar-container">
+              <view class="accuracy-bar" style="width: {{item.percentage}}%"></view>
+            </view>
+            <text class="accuracy-label">{{item.range}}%</text>
+            <text class="accuracy-count">{{item.count}}次</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 学习趋势标签页 -->
+    <view class="tab-content" wx:if="{{activeTab === 'trend' && totalQuestions > 0}}">
+      <view class="chart-card" wx:if="{{trendData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">最近7天学习趋势</text>
+        </view>
+        <view class="trend-detail-chart">
+          <view class="trend-row" wx:for="{{trendData}}" wx:key="date">
+            <view class="trend-info">
+              <text class="trend-date">{{item.date}}</text>
+              <text class="trend-stats">{{item.questions}}题 | 正确{{item.correct}}题 | {{item.time}}秒</text>
+            </view>
+            <view class="trend-bar-wrapper">
+              <view class="trend-progress-bar">
+                <view class="trend-progress correct-progress" 
+                      style="width: {{item.questions > 0 ? (item.correct / item.questions * 100) : 0}}%"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 学习时长趋势 -->
+      <view class="chart-card" wx:if="{{studyTimeData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">最近7天学习时长</text>
+        </view>
+        <view class="study-time-chart">
+          <view class="time-item" wx:for="{{studyTimeData}}" wx:key="date">
+            <view class="time-bar-container">
+              <view class="time-bar" 
+                    style="height: {{item.time > 0 ? Math.min((item.time / 3600) * 100, 100) : 0}}%"></view>
+            </view>
+            <text class="time-label">{{item.date}}</text>
+            <text class="time-value">{{item.timeMinutes}}分钟</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 题型分布标签页 -->
+    <view class="tab-content" wx:if="{{activeTab === 'type' && totalQuestions > 0}}">
+      <view class="chart-card" wx:if="{{typeData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">题型分布统计</text>
+        </view>
+        <view class="type-distribution">
+          <view class="type-item" wx:for="{{typeData}}" wx:key="type"
+                bindtap="viewChartDetail" data-type="type" data-item="{{item}}">
+            <view class="type-info">
+              <text class="type-name">{{item.type}}</text>
+              <text class="type-accuracy">正确率: {{item.accuracy}}%</text>
+            </view>
+            <view class="type-stats">
+              <view class="type-bar-container">
+                <view class="type-bar correct" style="width: {{item.count > 0 ? (item.correct / item.count * 100) : 0}}%"></view>
+                <view class="type-bar wrong" style="width: {{item.count > 0 ? ((item.count - item.correct) / item.count * 100) : 0}}%"></view>
+              </view>
+              <text class="type-count">{{item.correct}}/{{item.count}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 错题分布 -->
+      <view class="chart-card" wx:if="{{wrongQuestionsData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">错题分布（按主题）</text>
+        </view>
+        <view class="wrong-distribution">
+          <view class="wrong-item" wx:for="{{wrongQuestionsData}}" wx:key="knowledgePoint"
+                bindtap="viewChartDetail" data-type="wrong" data-item="{{item}}">
+            <text class="wrong-point">{{item.knowledgePoint}}</text>
+            <view class="wrong-count-wrapper">
+              <view class="wrong-count-bar" 
+                    style="width: {{item.count > 0 ? Math.min((item.count / wrongQuestionsData[0].count) * 100, 100) : 0}}%"></view>
+              <text class="wrong-count">{{item.count}}题</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 知识掌握标签页 -->
+    <view class="tab-content" wx:if="{{activeTab === 'knowledge' && totalQuestions > 0}}">
+      <view class="chart-card" wx:if="{{knowledgePointsData.length > 0}}">
+        <view class="chart-header">
+          <text class="chart-title">知识点掌握程度</text>
+        </view>
+        <view class="knowledge-distribution">
+          <view class="knowledge-item" wx:for="{{knowledgePointsData}}" wx:key="name"
+                bindtap="viewChartDetail" data-type="knowledge" data-item="{{item}}">
+            <view class="knowledge-header">
+              <text class="knowledge-name">{{item.name}}</text>
+              <text class="knowledge-mastery">{{item.mastery}}%</text>
+            </view>
+            <view class="knowledge-progress-container">
+              <view class="knowledge-progress" style="width: {{item.mastery}}%"></view>
+            </view>
+            <view class="knowledge-detail">
+              <text class="knowledge-stats">正确: {{item.correct}} / 总计: {{item.total}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    <!-- 无数据状态 -->
+    <view class="empty-container" wx:if="{{totalQuestions === 0}}">
+      <view class="empty-icon">📊</view>
+      <text class="empty-text">暂无统计数据</text>
+      <text class="empty-desc">开始答题后，这里将显示您的学习统计</text>
+    </view>
+  </view>
+</view>

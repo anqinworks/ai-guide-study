@@ -1,0 +1,31 @@
+<!-- pages/answer/answer.wxml -->
+<view class="container">
+  <view class="progress-section">
+    <text class="progress-text">第 {{currentIndex + 1}} 题 / 共 {{totalCount}} 题</text>
+    <view class="progress">
+      <view class="progress-bar" style="width: {{(currentIndex + 1) / totalCount * 100}}%"></view>
+    </view>
+  </view>
+  
+  <view class="question-card">
+    <text class="question">{{currentCard.question}}</text>
+    
+    <view class="options">
+      <view class="option {{selectedAnswer === option ? 'selected' : ''}}" 
+            wx:for="{{currentCard.options}}" 
+            wx:for-item="option"
+            wx:key="index"
+            bindtap="selectOption"
+            data-option="{{option}}"
+            hover-class="option-hover">
+        {{option}}
+      </view>
+    </view>
+  </view>
+  
+  <view class="button-group">
+    <button class="btn submit-btn" bindtap="submitAnswer" disabled="{{!selectedAnswer}}">
+      提交答案
+    </button>
+  </view>
+</view>

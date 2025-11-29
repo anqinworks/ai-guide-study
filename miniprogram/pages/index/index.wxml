@@ -1,0 +1,30 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  <!-- 头部区域 -->
+  <view class="header">
+    <text class="logo-text">Ask-AI</text>
+    <text class="subtitle">AI问答引导式学习</text>
+  </view>
+
+  <!-- 核心答题入口区域 -->
+  <view class="core-entry-section">
+    <view class="topic-input-card">
+      <text class="card-title">开始你的学习之旅</text>
+      <text class="card-subtitle">输入你想学习的主题，AI将为你生成个性化的问答内容</text>
+      <input class="input" placeholder="例如：Java基础、科学知识" bindinput="onTopicInput" value="{{topic}}"></input>
+      <button class="primary-btn" bindtap="goToTopicSetting">开始学习</button>
+    </view>
+  </view>
+
+  <!-- 推荐主题区域 -->
+  <view class="recommend-section">
+    <text class="section-title">热门主题推荐</text>
+    <view class="topic-list">
+      <view class="topic-item" wx:for="{{recommendTopics}}" wx:key="id" bindtap="selectTopic" data-topic="{{item.topic}}">
+        {{item.topic}}
+      </view>
+    </view>
+  </view>
+
+
+</view>

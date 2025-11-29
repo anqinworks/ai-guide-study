@@ -1,0 +1,397 @@
+/* pages/index/index.wxss */
+
+/* 全局样式重置 */
+page {
+  background-color: #F8F9FA;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 32rpx;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 头部区域 */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 64rpx;
+  text-align: center;
+  animation: fadeInDown 0.6s ease-out;
+  width: 100%;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Logo文字样式 - 设计方案1：简约现代风格 */
+.logo-text {
+  font-size: 56rpx;
+  font-weight: 800;
+  color: #FF7A45;
+  margin-bottom: 12rpx;
+  letter-spacing: 4rpx;
+  background: linear-gradient(135deg, #FF7A45 0%, #FF9500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.3);
+  transition: all 0.3s ease;
+  animation: logoFadeIn 1s ease-out;
+}
+
+/* Logo文字样式 - 设计方案2：活力多彩风格 */
+.logo-text.variant-2 {
+  font-size: 56rpx;
+  font-weight: 800;
+  margin-bottom: 12rpx;
+  letter-spacing: 4rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4rpx 16rpx rgba(102, 126, 234, 0.4);
+  transition: all 0.3s ease;
+  animation: logoSlideIn 1s ease-out;
+}
+
+/* Logo动画效果 */
+@keyframes logoFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes logoSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式调整 */
+@media screen and (max-width: 375rpx) {
+  .logo-text {
+    font-size: 48rpx;
+  }
+  
+  .logo-text.variant-2 {
+    font-size: 48rpx;
+  }
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #8C8C8C;
+  margin-bottom: 0;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* 核心答题入口区域 */
+.core-entry-section {
+  width: 100%;
+  margin-bottom: 64rpx;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 主题输入卡片 - 优化设计 */
+.topic-input-card {
+  background-color: #FFFFFF;
+  padding: 60rpx 48rpx;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1rpx solid #F5F5F5;
+}
+
+.topic-input-card:hover {
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+  transform: translateY(-2rpx);
+}
+
+/* 卡片标题样式 */
+.card-title {
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #333333;
+  display: block;
+  margin-bottom: 16rpx;
+  text-align: center;
+  letter-spacing: 1.2rpx;
+  line-height: 1.4;
+}
+
+/* 卡片副标题样式 */
+.card-subtitle {
+  font-size: 28rpx;
+  color: #8C8C8C;
+  display: block;
+  margin-bottom: 52rpx;
+  text-align: center;
+  line-height: 1.6;
+  font-weight: 400;
+  letter-spacing: 0.5rpx;
+}
+
+/* 输入框样式 - 现代专业设计 */
+.input {
+  width: 100%;
+  border: 2rpx solid #F0F0F0;
+  border-radius: 24rpx;
+  padding: 28rpx 40rpx;
+  font-size: 32rpx;
+  margin-bottom: 40rpx;
+  background-color: #FFFFFF;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  color: #333333;
+  font-weight: 400;
+  line-height: 1.8;
+  letter-spacing: 0.5rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  text-align: left;
+  display: block;
+  height: auto;
+  min-height: 100rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.input:focus {
+  border-color: #FF7A45;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08), 0 0 0 8rpx rgba(255, 122, 69, 0.12);
+  outline: none;
+  transform: translateY(-1rpx);
+}
+
+.input::placeholder {
+  color: #C9C9C9;
+  font-weight: 300;
+  letter-spacing: 0.3rpx;
+  line-height: 1.8;
+}
+
+.input:active {
+  border-color: #FF9500;
+}
+
+/* 响应式输入框调整 */
+@media screen and (max-width: 375rpx) {
+  .input {
+    padding: 32rpx 36rpx;
+    font-size: 30rpx;
+    border-radius: 20rpx;
+  }
+  
+  .card-title {
+    font-size: 34rpx;
+  }
+  
+  .card-subtitle {
+    font-size: 26rpx;
+    margin-bottom: 44rpx;
+  }
+}
+
+/* 主按钮样式 - 渐变设计 */
+.primary-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+  color: white;
+  padding: 32rpx;
+  border-radius: 16rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+  box-shadow: 0 4rpx 20rpx rgba(255, 122, 69, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  letter-spacing: 2rpx;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 8rpx 32rpx rgba(255, 122, 69, 0.35);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
+  background: linear-gradient(135deg, #FF5722 0%, #FF7A45 100%);
+}
+
+/* 推荐主题区域 */
+.recommend-section {
+  width: 100%;
+  margin-bottom: 48rpx;
+  background-color: #FFFFFF;
+  padding: 40rpx 32rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  animation: fadeInUp 0.6s ease-out 0.4s both;
+  border: 1rpx solid #F0F0F0;
+}
+
+/* 历史主题区域 */
+.history-section {
+  width: 100%;
+  margin-bottom: 48rpx;
+  background-color: #FFFFFF;
+  padding: 40rpx 32rpx;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  animation: fadeInUp 0.6s ease-out 0.6s both;
+  border: 1rpx solid #F0F0F0;
+}
+
+/* 区域标题样式 */
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333333;
+  margin-bottom: 32rpx;
+  display: block;
+  position: relative;
+  padding-left: 16rpx;
+  letter-spacing: 1rpx;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 32rpx;
+  background: linear-gradient(180deg, #FF7A45 0%, #FF9500 100%);
+  border-radius: 4rpx;
+}
+
+/* 主题列表样式 */
+.topic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  justify-content: flex-start;
+}
+
+/* 主题标签样式 - 简约圆角设计 */
+.topic-item {
+  padding: 24rpx 36rpx;
+  background-color: #FFFFFF;
+  color: #FF7A45;
+  border-radius: 32rpx;
+  font-size: 28rpx;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2rpx solid #FFEBE5;
+  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.08);
+  line-height: 1.4;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.topic-item:hover {
+  background-color: #FF7A45;
+  color: white;
+  transform: translateY(-4rpx);
+  box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.25);
+  border-color: #FF7A45;
+}
+
+.topic-item:active {
+  background-color: #FF5722;
+  transform: translateY(-2rpx);
+  box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
+  border-color: #FF5722;
+}
+
+/* 响应式设计 - 适配不同屏幕尺寸 */
+@media screen and (min-width: 750rpx) {
+  .container {
+    padding: 60rpx 80rpx;
+  }
+  
+  .topic-input-card {
+    max-width: 600rpx;
+  }
+  
+  .recommend-section,
+  .history-section {
+    max-width: 600rpx;
+  }
+  
+  .topic-list {
+    justify-content: center;
+  }
+}
+
+@media screen and (max-width: 375rpx) {
+  .container {
+    padding: 30rpx 24rpx;
+  }
+  
+  .logo-text {
+    font-size: 56rpx;
+  }
+  
+  .topic-input-card {
+    padding: 48rpx 32rpx;
+  }
+  
+  .card-title {
+    font-size: 32rpx;
+  }
+  
+  .card-subtitle {
+    font-size: 24rpx;
+    margin-bottom: 40rpx;
+  }
+  
+  .input {
+    padding: 28rpx;
+    font-size: 28rpx;
+  }
+  
+  .primary-btn {
+    padding: 28rpx;
+    font-size: 32rpx;
+  }
+}

@@ -1,0 +1,482 @@
+.container {
+  padding: 20rpx;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* 主题信息卡片 */
+.topic-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.3);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.topic-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15rpx;
+}
+
+.topic-icon {
+  font-size: 40rpx;
+  margin-right: 15rpx;
+}
+
+.topic-label {
+  font-size: 32rpx;
+  font-weight: bold;
+  opacity: 0.9;
+}
+
+.topic-content {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 20rpx;
+  word-break: break-word;
+}
+
+.topic-decoration {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 120rpx;
+  height: 120rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50% 0 0 0;
+}
+
+/* 设置区块 */
+.setting-section {
+  background: white;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25rpx;
+}
+
+.section-icon {
+  font-size: 36rpx;
+  margin-right: 15rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 难度选项 */
+.difficulty-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.difficulty-item {
+  flex: 1;
+  background: #f8f8f8;
+  border-radius: 15rpx;
+  padding: 25rpx 20rpx;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 2rpx solid transparent;
+}
+
+.difficulty-item.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4rpx 15rpx rgba(102, 126, 234, 0.3);
+}
+
+.difficulty-icon {
+  font-size: 48rpx;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.difficulty-text {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-bottom: 5rpx;
+}
+
+.difficulty-desc {
+  display: block;
+  font-size: 22rpx;
+  opacity: 0.8;
+}
+
+/* 卡片数量滑块 */
+.slider-container {
+  padding: 10rpx 0;
+}
+
+.slider-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.slider-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.slider-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #667eea;
+  background: #f0f0f0;
+  padding: 8rpx 20rpx;
+  border-radius: 20rpx;
+}
+
+.slider-range {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15rpx;
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* 高级选项 */
+.advanced-options {
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 20rpx;
+}
+
+.option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.option-item:last-child {
+  border-bottom: none;
+}
+
+.option-info {
+  flex: 1;
+}
+
+.option-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5rpx;
+}
+
+.option-desc {
+  display: block;
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* 生成按钮样式 */
+.generate-btn {
+  position: relative;
+  width: 100%;
+  height: 100rpx;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  border: none;
+  border-radius: 50rpx;
+  color: white;
+  font-size: 32rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15rpx;
+  box-shadow: 0 8rpx 25rpx rgba(255, 107, 107, 0.4);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-top: 40rpx;
+}
+
+.generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.generate-btn:hover::before {
+  left: 100%;
+}
+
+.generate-btn:hover {
+  transform: translateY(-2rpx);
+  box-shadow: 0 12rpx 35rpx rgba(255, 107, 107, 0.5);
+}
+
+.generate-btn:active {
+  transform: translateY(0);
+}
+
+.btn-text {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-icon {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  width: 40rpx;
+  height: 40rpx;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>') no-repeat center center;
+  background-size: contain;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 加载状态 */
+.generate-btn[loading] {
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  box-shadow: 0 8rpx 25rpx rgba(149, 165, 166, 0.4);
+}
+
+.generate-btn[loading]::before {
+  animation: loading-shine 1.5s infinite;
+}
+
+@keyframes loading-shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* 进度显示遮罩层 */
+.progress-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.progress-container {
+  background: white;
+  border-radius: 30rpx;
+  padding: 60rpx 50rpx;
+  width: 600rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50rpx);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 加载动画 */
+.loading-animation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 40rpx;
+  height: 120rpx;
+}
+
+.spinner {
+  position: relative;
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.spinner-item {
+  position: absolute;
+  width: 20rpx;
+  height: 20rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50%;
+  animation: spinner-rotate 1.2s linear infinite;
+}
+
+.spinner-item:nth-child(1) {
+  top: 0;
+  left: 50rpx;
+  animation-delay: 0s;
+}
+
+.spinner-item:nth-child(2) {
+  top: 15rpx;
+  right: 15rpx;
+  animation-delay: 0.15s;
+}
+
+.spinner-item:nth-child(3) {
+  top: 50rpx;
+  right: 0;
+  animation-delay: 0.3s;
+}
+
+.spinner-item:nth-child(4) {
+  bottom: 15rpx;
+  right: 15rpx;
+  animation-delay: 0.45s;
+}
+
+.spinner-item:nth-child(5) {
+  bottom: 0;
+  left: 50rpx;
+  animation-delay: 0.6s;
+}
+
+.spinner-item:nth-child(6) {
+  bottom: 15rpx;
+  left: 15rpx;
+  animation-delay: 0.75s;
+}
+
+.spinner-item:nth-child(7) {
+  top: 50rpx;
+  left: 0;
+  animation-delay: 0.9s;
+}
+
+.spinner-item:nth-child(8) {
+  top: 15rpx;
+  left: 15rpx;
+  animation-delay: 1.05s;
+}
+
+@keyframes spinner-rotate {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.5);
+  }
+}
+
+/* 进度信息 */
+.progress-info {
+  text-align: center;
+}
+
+.progress-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.progress-message {
+  display: block;
+  font-size: 26rpx;
+  color: #666;
+  margin-bottom: 40rpx;
+  min-height: 40rpx;
+}
+
+/* 进度条 */
+.progress-bar-container {
+  position: relative;
+  margin-top: 20rpx;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 16rpx;
+  background: #f0f0f0;
+  border-radius: 8rpx;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8rpx;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: progress-shine 1.5s infinite;
+}
+
+@keyframes progress-shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progress-percentage {
+  display: block;
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #667eea;
+  margin-top: 20rpx;
+}
