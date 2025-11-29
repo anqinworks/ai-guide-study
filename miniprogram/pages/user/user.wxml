@@ -18,26 +18,44 @@
     <text class="user-id">ID: {{userInfo.id || ''}}</text>
   </view>
   
+  <!-- 每日签到卡片 -->
+  <view class="checkin-section" wx:if="{{isLoggedIn}}">
+    <view class="checkin-card">
+      <view class="checkin-header">
+        <text class="checkin-title">每日签到</text>
+        <text class="checkin-subtitle">坚持签到，收获满满</text>
+      </view>
+      
+      <view class="checkin-content">
+        <view class="checkin-stats">
+          <view class="checkin-stat-item">
+            <text class="checkin-stat-value">{{checkinData.continuousDays || 0}}</text>
+            <text class="checkin-stat-label">连续签到</text>
+          </view>
+          <view class="checkin-stat-item">
+            <text class="checkin-stat-value">{{checkinData.totalDays || 0}}</text>
+            <text class="checkin-stat-label">累计签到</text>
+          </view>
+        </view>
+        
+        <button 
+          class="checkin-btn {{checkinData.isCheckedToday ? 'checked' : ''}}" 
+          bindtap="handleCheckin"
+          disabled="{{checkinData.isCheckedToday}}">
+          <text class="checkin-btn-icon" wx:if="{{!checkinData.isCheckedToday}}">✨</text>
+          <text class="checkin-btn-text">{{checkinData.isCheckedToday ? '今日已签到' : '立即签到'}}</text>
+        </button>
+        
+        <view class="checkin-tips" wx:if="{{checkinData.todayReward}}">
+          <text class="checkin-tips-icon">🎁</text>
+          <text class="checkin-tips-text">今日奖励：{{checkinData.todayReward}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  
   <!-- 功能菜单 -->
   <view class="menu-section" wx:if="{{isLoggedIn}}">
-    <view class="menu-item" bindtap="goToHistory">
-      <text class="menu-icon">📚</text>
-      <text class="menu-text">学习历史</text>
-      <text class="menu-arrow">></text>
-    </view>
-    
-    <view class="menu-item" bindtap="goToStatistics">
-      <text class="menu-icon">📊</text>
-      <text class="menu-text">学习统计</text>
-      <text class="menu-arrow">></text>
-    </view>
-    
-    <view class="menu-item" bindtap="goToSettings">
-      <text class="menu-icon">⚙️</text>
-      <text class="menu-text">设置</text>
-      <text class="menu-arrow">></text>
-    </view>
-    
     <view class="menu-item" bindtap="logout">
       <text class="menu-icon">🚪</text>
       <text class="menu-text">退出登录</text>

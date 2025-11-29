@@ -27,7 +27,7 @@ function validateKnowledgeCoverage(cards, knowledgePoints) {
     requiredPoints.forEach(point => {
       const pointLower = point.toLowerCase();
       // 检查知识点是否在题目或解析中出现
-      if (combinedText.includes(pointLower) || 
+      if (combinedText.includes(pointLower) ||
           (card.relatedKnowledgePoint && card.relatedKnowledgePoint.toLowerCase().includes(pointLower))) {
         coveredPoints.add(point);
         coverageDetails.push({
@@ -39,8 +39,8 @@ function validateKnowledgeCoverage(cards, knowledgePoints) {
     });
   });
 
-  const coverageRate = requiredPoints.length > 0 
-    ? coveredPoints.size / requiredPoints.length 
+  const coverageRate = requiredPoints.length > 0
+    ? coveredPoints.size / requiredPoints.length
     : 1.0;
 
   const missingPoints = requiredPoints.filter(p => !coveredPoints.has(p));
@@ -50,7 +50,7 @@ function validateKnowledgeCoverage(cards, knowledgePoints) {
     score: coverageRate,
     details: coverageDetails,
     missingPoints: missingPoints,
-    message: coverageRate >= 0.8 
+    message: coverageRate >= 0.8
       ? `知识点覆盖率：${(coverageRate * 100).toFixed(1)}%`
       : `知识点覆盖率不足：${(coverageRate * 100).toFixed(1)}%，缺失：${missingPoints.join('、')}`
   };
@@ -85,10 +85,10 @@ function validateDifficultyMatch(cards, difficulty) {
     const combinedText = questionText + ' ' + explanationText;
 
     // 检查是否包含难度关键词
-    const hasRequired = config.required.some(keyword => 
+    const hasRequired = config.required.some(keyword =>
       combinedText.includes(keyword.toLowerCase())
     );
-    const hasAvoid = config.avoid.some(keyword => 
+    const hasAvoid = config.avoid.some(keyword =>
       combinedText.includes(keyword.toLowerCase())
     );
 
@@ -103,7 +103,7 @@ function validateDifficultyMatch(cards, difficulty) {
       hasRequired: hasRequired,
       hasAvoid: hasAvoid
     });
-  }
+  })
 
   const matchRate = cards.length > 0 ? matchCount / cards.length : 0;
 
@@ -162,7 +162,7 @@ function validateQuestionTypeCompliance(cards, questionTypes) {
   });
 
   // 检查每种题型是否至少有一道题
-  const allTypesCovered = requiredTypes.every(type => 
+  const allTypesCovered = requiredTypes.every(type =>
     typeDistribution[type] > 0
   );
 
@@ -206,26 +206,26 @@ function validateGoalRelevance(cards, learningGoals) {
     // 检查是否与学习目标相关
     const hasGoalMatch = goals.some(goal => {
       const goalKeywords = goal.split(/[，,。\s]/).filter(w => w.length > 1);
-      return goalKeywords.some(keyword => 
+      return goalKeywords.some(keyword =>
         combinedText.includes(keyword.toLowerCase())
       );
     });
 
     const hasCapabilityMatch = capabilities.some(capability => {
       const capKeywords = capability.split(/[，,。\s]/).filter(w => w.length > 1);
-      return capKeywords.some(keyword => 
+      return capKeywords.some(keyword =>
         combinedText.includes(keyword.toLowerCase())
       );
     });
 
     const hasSkillMatch = skills.some(skill => {
       const skillKeywords = skill.split(/[，,。\s]/).filter(w => w.length > 1);
-      return skillKeywords.some(keyword => 
+      return skillKeywords.some(keyword =>
         combinedText.includes(keyword.toLowerCase())
       );
     });
 
-    const isRelevant = hasGoalMatch || hasCapabilityMatch || hasSkillMatch || 
+    const isRelevant = hasGoalMatch || hasCapabilityMatch || hasSkillMatch ||
                       (card.relatedGoal && card.relatedGoal.trim());
 
     if (isRelevant) {

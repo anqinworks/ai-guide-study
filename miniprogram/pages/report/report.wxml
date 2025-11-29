@@ -37,13 +37,39 @@
     </view>
     
     <!-- 学习建议 -->
-    <view class="suggestions-section">
+    <view class="suggestions-section" wx:if="{{learningSuggestions}}">
       <view class="section-header">
         <text class="section-title">学习建议</text>
-        <view class="section-icon">💡</view>
+        <view class="section-icon">{{learningSuggestions.icon}}</view>
       </view>
-      <view class="suggestions-card">
-        <text class="suggestions">{{learningSuggestions}}</text>
+      <view class="suggestions-card" style="border-left-color: {{learningSuggestions.color}}">
+        <view class="suggestions-header">
+          <view class="suggestions-title-wrapper">
+            <text class="suggestions-level" style="color: {{learningSuggestions.color}}">{{learningSuggestions.level}}</text>
+            <text class="suggestions-title">{{learningSuggestions.title}}</text>
+          </view>
+          <view class="suggestions-progress-wrapper">
+            <view class="suggestions-progress-bar">
+              <view class="suggestions-progress-fill" style="width: {{learningSuggestions.progress}}%; background-color: {{learningSuggestions.color}}"></view>
+            </view>
+            <text class="suggestions-progress-text">{{learningSuggestions.progress}}%</text>
+          </view>
+        </view>
+        <text class="suggestions-description">{{learningSuggestions.description}}</text>
+        <view class="suggestions-tips">
+          <view class="tips-title">
+            <text class="tips-icon">💡</text>
+            <text class="tips-title-text">学习建议</text>
+          </view>
+          <view class="tips-list">
+            <view class="tip-item" wx:for="{{learningSuggestions.tips}}" wx:key="index" wx:for-item="tip">
+              <view class="tip-icon" style="background-color: {{learningSuggestions.color}}20; color: {{learningSuggestions.color}}">
+                <text class="tip-number">{{index + 1}}</text>
+              </view>
+              <text class="tip-text">{{tip}}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
     
@@ -80,19 +106,25 @@
           <view class="question-header">
             <text class="question-number">{{index + 1}}</text>
             <view class="question-text-wrapper">
-              <rich-text class="question-text" nodes="{{item.questionHtml}}"></rich-text>
+              <scroll-view class="code-scroll-view" scroll-x="true" enable-flex="true">
+                <rich-text class="question-text" nodes="{{item.questionHtml}}"></rich-text>
+              </scroll-view>
             </view>
           </view>
           <view class="answer-info">
             <text class="answer-label">正确答案：</text>
             <view class="correct-answer-wrapper">
-              <rich-text class="correct-answer" nodes="{{item.correctAnswerHtml}}"></rich-text>
+              <scroll-view class="code-scroll-view" scroll-x="true" enable-flex="true">
+                <rich-text class="correct-answer" nodes="{{item.correctAnswerHtml}}"></rich-text>
+              </scroll-view>
             </view>
           </view>
           <view class="explanation-info" wx:if="{{item.explanationHtml}}">
             <text class="explanation-label">详细解析：</text>
             <view class="explanation-wrapper">
-              <rich-text class="explanation-text" nodes="{{item.explanationHtml}}"></rich-text>
+              <scroll-view class="code-scroll-view" scroll-x="true" enable-flex="true">
+                <rich-text class="explanation-text" nodes="{{item.explanationHtml}}"></rich-text>
+              </scroll-view>
             </view>
           </view>
         </view>

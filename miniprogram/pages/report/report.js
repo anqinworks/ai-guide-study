@@ -3,12 +3,12 @@ const feedback = require('../../utils/feedback')
 const richTextParser = require('../../utils/richTextParser')
 
 Page({
-  data: {
+    data: {
     totalQuestions: 0,
     correctAnswers: 0,
     accuracy: 0,
     totalTime: 0,
-    learningSuggestions: '',
+    learningSuggestions: null,
     wrongQuestions: [],
     loading: false,
     isHistoryReport: false // 标识是否为历史会话报告
@@ -179,15 +179,79 @@ Page({
    * 生成学习建议
    */
   generateLearningSuggestions(accuracy) {
+    let suggestions = {
+      level: '',
+      icon: '',
+      title: '',
+      description: '',
+      tips: [],
+      progress: 0,
+      color: ''
+    };
+    
     if (accuracy >= 90) {
-      return '恭喜你！你已经掌握了这个主题的大部分知识。建议你尝试更高难度的学习内容，或者探索相关的扩展主题。';
+      suggestions = {
+        level: '优秀',
+        icon: '🌟',
+        title: '恭喜你！表现优秀',
+        description: '你已经掌握了这个主题的大部分知识，继续保持！',
+        tips: [
+          '尝试更高难度的学习内容',
+          '探索相关的扩展主题',
+          '帮助其他学习者解答问题',
+          '总结学习经验，形成知识体系'
+        ],
+        progress: accuracy,
+        color: '#52C41A'
+      };
     } else if (accuracy >= 70) {
-      return '你已经掌握了这个主题的基本内容，但还有提升空间。建议你重点复习错题，加深对相关知识点的理解。';
+      suggestions = {
+        level: '良好',
+        icon: '💪',
+        title: '表现良好，继续加油',
+        description: '你已经掌握了这个主题的基本内容，但还有提升空间。',
+        tips: [
+          '重点复习错题，加深理解',
+          '回顾相关知识点，查漏补缺',
+          '多做练习，巩固基础',
+          '尝试总结错题规律'
+        ],
+        progress: accuracy,
+        color: '#1890FF'
+      };
     } else if (accuracy >= 50) {
-      return '你对这个主题有了初步的了解，但需要加强学习。建议你重新学习相关内容，重点关注基础知识点。';
+      suggestions = {
+        level: '需加强',
+        icon: '📚',
+        title: '需要加强学习',
+        description: '你对这个主题有了初步的了解，但需要加强学习。',
+        tips: [
+          '重新学习相关内容',
+          '重点关注基础知识点',
+          '多做基础练习',
+          '寻求帮助，不要放弃'
+        ],
+        progress: accuracy,
+        color: '#FAAD14'
+      };
     } else {
-      return '建议你重新学习这个主题的基础内容，逐步掌握相关知识点。可以尝试降低学习难度，循序渐进地提高。';
+      suggestions = {
+        level: '需努力',
+        icon: '🎯',
+        title: '需要更多努力',
+        description: '建议你重新学习这个主题的基础内容，逐步掌握相关知识点。',
+        tips: [
+          '重新学习基础内容',
+          '降低学习难度，循序渐进',
+          '多花时间理解概念',
+          '保持学习热情，不要气馁'
+        ],
+        progress: accuracy,
+        color: '#FF4D4F'
+      };
     }
+    
+    return suggestions;
   },
 
   /**
