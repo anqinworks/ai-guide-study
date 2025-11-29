@@ -1,6 +1,7 @@
 // pages/user/user.js
 const request = require('../../utils/request')
 const feedback = require('../../utils/feedback')
+const avatarLibrary = require('../../utils/avatarLibrary')
 
 Page({
   data: {
@@ -8,23 +9,26 @@ Page({
     isLoggedIn: false,
     loginBtnDisabled: false,
     loginBtnDisabledTime: 0,
-    checkinData: {
-      isCheckedToday: false,
+    learningStats: {
+      todayMinutes: 0,
+      totalMinutes: 0,
+      targetMinutes: 30,
       continuousDays: 0,
-      totalDays: 0,
-      lastCheckinDate: '',
-      todayReward: ''
-    }
+      progress: 0
+    },
+    learningGoals: []
   },
 
   onLoad() {
     this.checkLoginStatus()
-    this.loadCheckinData()
+    this.loadLearningStats()
+    this.loadLearningGoals()
   },
 
   onShow() {
     this.checkLoginStatus()
-    this.loadCheckinData()
+    this.loadLearningStats()
+    this.loadLearningGoals()
   },
 
   // 检查登录状态
@@ -48,13 +52,21 @@ Page({
     const app = getApp()
     try {
       const res = await request.get('/user/info')
-      app.globalData.userInfo = res.user
+      const userInfo = res.user
+      
+      // 如果用户没有头像或头像为空，从图片库中分配
+      if (!userInfo.avatar || userInfo.avatar === '') {
+        userInfo.avatar = avatarLibrary.getAvatarByUserId(userInfo.id)
+      }
+      
+      app.globalData.userInfo = userInfo
       this.setData({
-        userInfo: res.user,
+        userInfo: userInfo,
         isLoggedIn: true
       })
-      // 获取用户信息成功后加载签到数据
-      this.loadCheckinData()
+      // 获取用户信息成功后加载学习数据
+      this.loadLearningStats()
+      this.loadLearningGoals()
     } catch (err) {
       console.error('获取用户信息失败', err)
       // 获取用户信息失败，清除token
@@ -111,14 +123,21 @@ Page({
       wx.setStorageSync('token', serverRes.token)
       wx.setStorageSync('userInfo', serverRes.user)
       
+      // 如果用户没有头像，从图片库中分配
+      const userInfo = serverRes.user
+      if (!userInfo.avatar || userInfo.avatar === '') {
+        userInfo.avatar = avatarLibrary.getAvatarByUserId(userInfo.id)
+      }
+      
       // 更新登录状态
       this.setData({
         isLoggedIn: true,
-        userInfo: serverRes.user
+        userInfo: userInfo
       })
       
-      // 登录成功后加载签到数据
-      this.loadCheckinData()
+      // 登录成功后加载学习数据
+      this.loadLearningStats()
+      this.loadLearningGoals()
       
       feedback.hideLoading()
       feedback.showSuccess('登录成功！')
@@ -142,135 +161,99 @@ Page({
     }
   },
 
-  // 加载签到数据
-  loadCheckinData() {
+  // 加载学习统计数据
+  loadLearningStats() {
     if (!this.data.isLoggedIn) {
       return
     }
     
     try {
       const userId = this.data.userInfo.id || 'default'
-      const checkinKey = `checkin_${userId}`
-      const storedData = wx.getStorageSync(checkinKey)
+      const statsKey = `learning_stats_${userId}`
+      const storedData = wx.getStorageSync(statsKey)
       
       const today = this.getTodayString()
-      let checkinData = {
-        isCheckedToday: false,
+      let learningStats = {
+        todayMinutes: 0,
+        totalMinutes: 0,
+        targetMinutes: 30,
         continuousDays: 0,
-        totalDays: 0,
-        lastCheckinDate: '',
-        todayReward: ''
+        progress: 0,
+        lastStudyDate: ''
       }
       
       if (storedData) {
-        checkinData = JSON.parse(storedData)
-        // 检查今天是否已签到
-        checkinData.isCheckedToday = checkinData.lastCheckinDate === today
+        learningStats = JSON.parse(storedData)
         
-        // 如果上次签到不是昨天，重置连续签到天数
-        const yesterday = this.getYesterdayString()
-        if (!checkinData.isCheckedToday && checkinData.lastCheckinDate !== yesterday) {
-          checkinData.continuousDays = 0
+        // 如果今天没有学习，重置今日时长
+        if (learningStats.lastStudyDate !== today) {
+          learningStats.todayMinutes = 0
+          // 检查是否连续学习
+          const yesterday = this.getYesterdayString()
+          if (learningStats.lastStudyDate !== yesterday) {
+            learningStats.continuousDays = 0
+          }
         }
       }
       
-      // 计算今日奖励
-      if (!checkinData.isCheckedToday) {
-        checkinData.todayReward = this.calculateReward(checkinData.continuousDays)
-      }
+      // 计算今日进度
+      learningStats.progress = Math.min(100, Math.round((learningStats.todayMinutes / learningStats.targetMinutes) * 100))
       
-      this.setData({ checkinData })
+      this.setData({ learningStats })
     } catch (err) {
-      console.error('加载签到数据失败', err)
+      console.error('加载学习统计数据失败', err)
     }
   },
 
-  // 处理签到
-  handleCheckin() {
-    if (this.data.checkinData.isCheckedToday) {
+  // 加载学习目标（从数据库）
+  async loadLearningGoals() {
+    if (!this.data.isLoggedIn) {
       return
     }
     
     try {
-      const userId = this.data.userInfo.id || 'default'
-      const checkinKey = `checkin_${userId}`
-      const today = this.getTodayString()
-      const yesterday = this.getYesterdayString()
+      const res = await request.get('/learning-goal')
       
-      let checkinData = { ...this.data.checkinData }
-      
-      // 判断是否连续签到
-      if (checkinData.lastCheckinDate === yesterday) {
-        // 连续签到
-        checkinData.continuousDays = (checkinData.continuousDays || 0) + 1
-      } else if (checkinData.lastCheckinDate !== today) {
-        // 中断后重新开始
-        checkinData.continuousDays = 1
+      if (res.success && res.goals) {
+        // 格式化日期显示
+        const learningGoals = res.goals.map(goal => ({
+          ...goal,
+          targetDate: goal.targetDate ? this.formatGoalDate(goal.targetDate) : null
+        }))
+        
+        this.setData({ learningGoals })
+      } else {
+        // 如果获取失败，设置为空数组
+        this.setData({ learningGoals: [] })
       }
-      
-      checkinData.totalDays = (checkinData.totalDays || 0) + 1
-      checkinData.lastCheckinDate = today
-      checkinData.isCheckedToday = true
-      // 使用更新后的连续签到天数计算奖励
-      checkinData.todayReward = this.calculateReward(checkinData.continuousDays)
-      
-      // 保存到本地存储
-      wx.setStorageSync(checkinKey, JSON.stringify(checkinData))
-      
-      // 更新UI
-      this.setData({ checkinData })
-      
-      // 显示签到成功提示
-      const rewardText = checkinData.todayReward || '鼓励'
-      feedback.showSuccess(`签到成功！获得${rewardText} 🎉`)
-      
-      // 添加签到动画效果
-      this.triggerCheckinAnimation()
     } catch (err) {
-      console.error('签到失败', err)
-      feedback.showError('签到失败，请稍后重试')
+      console.error('加载学习目标失败', err)
+      // 出错时设置为空数组，避免页面显示错误
+      this.setData({ learningGoals: [] })
     }
   },
 
-  // 计算奖励
-  calculateReward(continuousDays) {
-    if (continuousDays >= 30) {
-      return '超级奖励'
-    } else if (continuousDays >= 14) {
-      return '丰厚奖励'
-    } else if (continuousDays >= 7) {
-      return '特别奖励'
-    } else if (continuousDays >= 3) {
-      return '额外奖励'
-    } else {
-      return '基础奖励'
-    }
+  // 格式化目标日期
+  formatGoalDate(dateString) {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  },
+
+  // 编辑学习目标
+  editGoal() {
+    wx.navigateTo({
+      url: '/pages/goal-setting/goal-setting'
+    })
   },
 
   // 获取今天的日期字符串
   getTodayString() {
     const date = new Date()
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  },
-
-  // 获取昨天的日期字符串
-  getYesterdayString() {
-    const date = new Date()
-    date.setDate(date.getDate() - 1)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-  },
-
-  // 触发签到动画
-  triggerCheckinAnimation() {
-    // 简单的动画效果，可以通过CSS实现
-    this.setData({
-      'checkinData.animation': true
-    })
-    setTimeout(() => {
-      this.setData({
-        'checkinData.animation': false
-      })
-    }, 1000)
   },
 
   logout() {

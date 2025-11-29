@@ -1,43 +1,62 @@
 /* pages/answer-record/answer-record.wxss */
 .container {
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, var(--background-color) 0%, #FFFAF0 100%);
   min-height: 100vh;
-  padding-bottom: 20rpx;
+  padding-bottom: var(--spacing-lg);
 }
 
 .header {
-  padding: 30rpx;
-  background-color: #ffffff;
-  border-bottom: 1rpx solid #e0e0e0;
+  padding: var(--spacing-xl);
+  background-color: var(--card-background);
+  border-bottom: 1rpx solid var(--border-color);
   text-align: center;
+  box-shadow: var(--shadow-sm);
 }
 
 .title {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: bold;
-  color: #333333;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #FF9500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .record-list {
-  padding: 20rpx;
+  padding: var(--spacing-lg);
 }
 
 .record-item {
-  background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 30rpx;
-  margin-bottom: 20rpx;
-  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
   position: relative;
+  overflow: hidden;
+}
+
+.record-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6rpx;
+  height: 100%;
+  background: linear-gradient(180deg, var(--primary-color) 0%, #FF9500 100%);
+  transform: scaleY(0);
+  transition: transform var(--transition-base);
 }
 
 .record-item:active {
-  transform: scale(0.98);
+  transform: translateY(-2rpx);
+  box-shadow: var(--shadow-lg);
 }
 
-.record-item:hover {
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+.record-item:active::before {
+  transform: scaleY(1);
 }
 
 .record-header {
@@ -52,15 +71,15 @@
 
 .record-time {
   font-size: 24rpx;
-  color: #999999;
+  color: var(--text-tertiary);
   display: block;
-  margin-bottom: 10rpx;
+  margin-bottom: var(--spacing-sm);
 }
 
 .record-topic {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: bold;
-  color: #333333;
+  color: var(--text-primary);
   display: block;
 }
 
@@ -76,8 +95,9 @@
 }
 
 .accuracy {
-  color: #FF7A45;
+  color: var(--primary-color);
   font-weight: bold;
+  font-size: 28rpx;
 }
 
 .real-time-stats {
@@ -126,11 +146,11 @@
 }
 
 .stat-value.correct {
-  color: #52c41a;
+  color: var(--success-color);
 }
 
 .stat-value.wrong {
-  color: #ff4d4f;
+  color: var(--error-color);
 }
 
 .record-content {

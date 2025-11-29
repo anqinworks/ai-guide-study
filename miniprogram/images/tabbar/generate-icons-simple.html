@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabBar 图标生成器 - 简化版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .icon-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        .icon-item:hover {
+            border-color: #FF7A45;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,122,69,0.2);
+        }
+        .icon-item h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        canvas:hover {
+            border-color: #FF7A45;
+            transform: scale(1.05);
+        }
+        button {
+            background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(255,122,69,0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255,122,69,0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .instructions {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            line-height: 1.8;
+            border-left: 4px solid #2196F3;
+        }
+        .instructions h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        .instructions ol {
+            margin-left: 20px;
+            color: #333;
+        }
+        .instructions code {
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .success-msg {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 TabBar 图标生成器</h1>
+        <p class="subtitle">点击"下载"按钮生成并保存图标到 miniprogram/images/tabbar/ 目录</p>
+        
+        <div class="icon-grid">
+            <div class="icon-item">
+                <h3>🏠 首页 - 未选中</h3>
+                <canvas id="home" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('home', '#999999')">⬇️ 下载 home.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>🏠 首页 - 选中</h3>
+                <canvas id="home-active" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('home-active', '#FF7A45')">⬇️ 下载 home-active.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>📋 答题记录 - 未选中</h3>
+                <canvas id="record" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('record', '#999999')">⬇️ 下载 record.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>📋 答题记录 - 选中</h3>
+                <canvas id="record-active" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('record-active', '#FF7A45')">⬇️ 下载 record-active.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>📊 统计 - 未选中</h3>
+                <canvas id="statistics" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('statistics', '#999999')">⬇️ 下载 statistics.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>📊 统计 - 选中</h3>
+                <canvas id="statistics-active" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('statistics-active', '#FF7A45')">⬇️ 下载 statistics-active.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>👤 我的 - 未选中</h3>
+                <canvas id="user" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('user', '#999999')">⬇️ 下载 user.png</button>
+            </div>
+            <div class="icon-item">
+                <h3>👤 我的 - 选中</h3>
+                <canvas id="user-active" width="81" height="81"></canvas>
+                <br>
+                <button onclick="downloadIcon('user-active', '#FF7A45')">⬇️ 下载 user-active.png</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📝 使用说明</h3>
+            <ol>
+                <li>点击每个图标下方的"下载"按钮，会自动下载PNG文件</li>
+                <li>将下载的8个PNG文件移动到 <code>miniprogram/images/tabbar/</code> 目录</li>
+                <li>确保文件名与按钮上的名称完全一致</li>
+                <li>在 <code>app.json</code> 中重新添加图标路径配置（已准备好配置代码）</li>
+                <li>重新编译小程序，图标即可显示</li>
+            </ol>
+        </div>
+        
+        <div class="success-msg" id="successMsg">
+            ✅ 图标下载成功！请将文件保存到 miniprogram/images/tabbar/ 目录
+        </div>
+    </div>
+
+    <script>
+        // 绘制图标函数
+        function drawIcon(canvasId, iconType, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            // 清空并设置透明背景
+            ctx.clearRect(0, 0, 81, 81);
+            
+            // 设置样式
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            const centerX = 40.5;
+            const centerY = 40.5;
+            
+            switch(iconType) {
+                case 'home':
+                    // 房子图标
+                    ctx.beginPath();
+                    // 屋顶（三角形）
+                    ctx.moveTo(centerX, 12);
+                    ctx.lineTo(22, 28);
+                    ctx.lineTo(59, 28);
+                    ctx.closePath();
+                    ctx.stroke();
+                    // 房子主体
+                    ctx.strokeRect(26, 28, 29, 28);
+                    // 门
+                    ctx.fillRect(36, 42, 9, 14);
+                    break;
+                    
+                case 'record':
+                    // 列表图标
+                    ctx.beginPath();
+                    // 三条横线
+                    ctx.moveTo(18, 22);
+                    ctx.lineTo(63, 22);
+                    ctx.moveTo(18, 40.5);
+                    ctx.lineTo(63, 40.5);
+                    ctx.moveTo(18, 59);
+                    ctx.lineTo(63, 59);
+                    ctx.stroke();
+                    // 左侧圆点
+                    ctx.beginPath();
+                    ctx.arc(26, 22, 4, 0, Math.PI * 2);
+                    ctx.arc(26, 40.5, 4, 0, Math.PI * 2);
+                    ctx.arc(26, 59, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                    
+                case 'statistics':
+                    // 图表图标
+                    ctx.beginPath();
+                    // 坐标轴
+                    ctx.moveTo(18, 63);
+                    ctx.lineTo(18, 18);
+                    ctx.lineTo(63, 18);
+                    ctx.stroke();
+                    // 柱状图（4个柱子）
+                    ctx.fillRect(22, 52, 7, 11);
+                    ctx.fillRect(32, 42, 7, 21);
+                    ctx.fillRect(42, 32, 7, 31);
+                    ctx.fillRect(52, 37, 7, 26);
+                    break;
+                    
+                case 'user':
+                    // 用户图标
+                    ctx.beginPath();
+                    // 头部（圆形）
+                    ctx.arc(centerX, 26, 9, 0, Math.PI * 2);
+                    ctx.stroke();
+                    // 身体（半圆）
+                    ctx.beginPath();
+                    ctx.arc(centerX, 26, 16, 0, Math.PI, true);
+                    ctx.stroke();
+                    break;
+            }
+        }
+        
+        // 初始化所有图标
+        function initIcons() {
+            drawIcon('home', 'home', '#999999');
+            drawIcon('home-active', 'home', '#FF7A45');
+            drawIcon('record', 'record', '#999999');
+            drawIcon('record-active', 'record', '#FF7A45');
+            drawIcon('statistics', 'statistics', '#999999');
+            drawIcon('statistics-active', 'statistics', '#FF7A45');
+            drawIcon('user', 'user', '#999999');
+            drawIcon('user-active', 'user', '#FF7A45');
+        }
+        
+        // 下载图标
+        function downloadIcon(canvasId, color) {
+            const canvas = document.getElementById(canvasId);
+            const iconType = canvasId.replace('-active', '');
+            
+            // 重新绘制以确保颜色正确
+            drawIcon(canvasId, iconType, color);
+            
+            // 转换为Blob并下载
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = canvasId + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // 显示成功消息
+                const msg = document.getElementById('successMsg');
+                msg.style.display = 'block';
+                setTimeout(() => {
+                    msg.style.display = 'none';
+                }, 3000);
+            }, 'image/png');
+        }
+        
+        // 页面加载时初始化
+        window.onload = initIcons;
+    </script>
+</body>
+</html>
+

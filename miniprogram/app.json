@@ -7,7 +7,8 @@
     "pages/report/report",
     "pages/user/user",
     "pages/answer-record/answer-record",
-    "pages/statistics/statistics"
+    "pages/statistics/statistics",
+    "pages/goal-setting/goal-setting"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -20,23 +21,35 @@
     "selectedColor": "#FF7A45",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",
+    "position": "bottom",
+    "custom": false,
     "list": [
-      {
-        "pagePath": "pages/index/index",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/answer-record/answer-record",
-        "text": "答题记录"
-      },
-      {
-        "pagePath": "pages/statistics/statistics",
-        "text": "统计"
-      },
-      {
-        "pagePath": "pages/user/user",
-        "text": "我的"
-      }
+
+    {
+      "pagePath": "pages/index/index",
+      "text": "首页",
+      "iconPath": "images/tabbar/home.png",
+      "selectedIconPath": "images/tabbar/home-active.png"
+    },
+    {
+      "pagePath": "pages/answer-record/answer-record",
+      "text": "答题记录",
+      "iconPath": "images/tabbar/record.png",
+      "selectedIconPath": "images/tabbar/record-active.png"
+    },
+    {
+      "pagePath": "pages/statistics/statistics",
+      "text": "统计",
+      "iconPath": "images/tabbar/statistics.png",
+      "selectedIconPath": "images/tabbar/statistics-active.png"
+    },
+    {
+      "pagePath": "pages/user/user",
+      "text": "我的",
+      "iconPath": "images/tabbar/user.png",
+      "selectedIconPath": "images/tabbar/user-active.png"
+    }
+    
     ]
   },
   "style": "v2",

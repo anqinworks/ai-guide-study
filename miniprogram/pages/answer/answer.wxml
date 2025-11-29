@@ -11,15 +11,23 @@
   <!-- 题目卡片 -->
   <view class="question-card">
     <view class="question-header">
+      <view class="question-badge">
+        <text class="question-number">Q{{currentIndex + 1}}</text>
+      </view>
       <text class="question-label">题目</text>
     </view>
     <view class="question-content">
-      <rich-text class="question-text" nodes="{{questionHtml}}"></rich-text>
+      <scroll-view class="question-scroll" scroll-y="true" enable-flex="true">
+        <rich-text class="question-text" nodes="{{questionHtml}}"></rich-text>
+      </scroll-view>
     </view>
     
     <!-- 选项区域 -->
     <view class="options-section">
-      <text class="options-label">请选择答案</text>
+      <view class="options-header">
+        <text class="options-icon">📋</text>
+        <text class="options-label">请选择答案</text>
+      </view>
       <view class="options">
         <view class="option {{selectedAnswer === option ? 'selected' : ''}}" 
               wx:for="{{currentCard.options}}" 
@@ -29,8 +37,16 @@
               bindtap="selectOption"
               data-option="{{option}}"
               hover-class="option-hover">
+          <view class="option-marker">
+            <text class="option-letter">{{String.fromCharCode(65 + optIndex)}}</text>
+          </view>
           <view class="option-content">
-            <rich-text class="option-text" nodes="{{optionsHtml[optIndex]}}"></rich-text>
+            <scroll-view class="option-scroll" scroll-y="true" enable-flex="true">
+              <rich-text class="option-text" nodes="{{optionsHtml[optIndex]}}"></rich-text>
+            </scroll-view>
+          </view>
+          <view class="option-check" wx:if="{{selectedAnswer === option}}">
+            <text class="check-icon">✓</text>
           </view>
         </view>
       </view>
@@ -40,7 +56,8 @@
   <!-- 按钮区域 -->
   <view class="button-group">
     <button class="btn submit-btn" bindtap="submitAnswer" disabled="{{!selectedAnswer}}">
-      提交答案
+      <text class="btn-icon">✓</text>
+      <text class="btn-text">{{selectedAnswer ? '提交答案' : '请先选择答案'}}</text>
     </button>
   </view>
 </view>

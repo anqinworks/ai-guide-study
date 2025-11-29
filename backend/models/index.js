@@ -19,6 +19,7 @@ db.Topic = require('./topic')(sequelize, Sequelize);
 db.QACard = require('./qaCard')(sequelize, Sequelize);
 db.AnswerRecord = require('./answerRecord')(sequelize, Sequelize);
 db.LearningReport = require('./learningReport')(sequelize, Sequelize);
+db.LearningGoal = require('./LearningGoal')(sequelize, Sequelize);
 
 // 定义关联关系
 db.User.hasMany(db.Topic, { foreignKey: 'userId' });
@@ -41,5 +42,8 @@ db.LearningReport.belongsTo(db.User, { foreignKey: 'userId' });
 
 db.Topic.hasMany(db.LearningReport, { foreignKey: 'topicId' });
 db.LearningReport.belongsTo(db.Topic, { foreignKey: 'topicId' });
+
+db.User.hasMany(db.LearningGoal, { foreignKey: 'userId', onDelete: 'CASCADE' });
+db.LearningGoal.belongsTo(db.User, { foreignKey: 'userId' });
 
 module.exports = db;

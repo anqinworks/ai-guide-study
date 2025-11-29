@@ -1,0 +1,180 @@
+<!-- pages/goal-setting/goal-setting.wxml -->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">学习目标设置</text>
+    <text class="page-subtitle">设置你的学习目标，追踪学习进度</text>
+  </view>
+  
+  <!-- 现有目标列表 -->
+  <view class="goals-section" wx:if="{{goals.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">我的学习目标</text>
+      <text class="section-count">共{{goals.length}}个</text>
+    </view>
+    
+    <view class="goals-list">
+      <view class="goal-item" wx:for="{{goals}}" wx:key="id">
+        <view class="goal-main" bindtap="editGoal" data-goal="{{item}}">
+          <view class="goal-header-row">
+            <view class="goal-priority-badge priority-{{item.priority}}">
+              <text class="priority-text">P{{item.priority}}</text>
+            </view>
+            <text class="goal-name">{{item.name}}</text>
+            <view class="goal-status-badge status-{{item.status}}">
+              <text class="status-text">{{item.status === 'active' ? '进行中' : item.status === 'completed' ? '已完成' : '已暂停'}}</text>
+            </view>
+          </view>
+          
+          <text class="goal-description" wx:if="{{item.description}}">{{item.description}}</text>
+          
+          <view class="goal-progress-section">
+            <view class="progress-info">
+              <text class="progress-label">完成进度</text>
+              <text class="progress-value">{{item.progress}}%</text>
+            </view>
+            <view class="progress-bar-wrapper">
+              <view class="progress-bar" style="width: {{item.progress}}%"></view>
+            </view>
+          </view>
+          
+          <view class="goal-meta">
+            <text class="goal-date" wx:if="{{item.targetDate}}">目标日期：{{item.targetDate}}</text>
+            <text class="goal-actions" catchtap="deleteGoal" data-id="{{item.id}}" data-name="{{item.name}}">删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 空状态 -->
+  <view class="empty-state" wx:if="{{goals.length === 0 && !showForm}}">
+    <view class="empty-icon">🎯</view>
+    <text class="empty-text">还没有设置学习目标</text>
+    <text class="empty-hint">点击下方按钮开始设置你的第一个学习目标</text>
+  </view>
+  
+  <!-- 添加/编辑目标表单 -->
+  <view class="form-section" wx:if="{{showForm}}">
+    <view class="form-card">
+      <view class="form-header">
+        <text class="form-title">{{editingGoal ? '编辑学习目标' : '新建学习目标'}}</text>
+        <text class="form-close" bindtap="cancelEdit">✕</text>
+      </view>
+      
+      <view class="form-content">
+        <!-- 目标名称 -->
+        <view class="form-item">
+          <text class="form-label required">目标名称</text>
+          <input 
+            class="form-input" 
+            placeholder="例如：掌握JavaScript基础语法"
+            value="{{formData.name}}"
+            bindinput="onNameInput"
+            maxlength="200"
+          />
+          <text class="form-hint">必填，不超过200个字符</text>
+        </view>
+        
+        <!-- 目标描述 -->
+        <view class="form-item">
+          <text class="form-label">目标描述</text>
+          <textarea 
+            class="form-textarea" 
+            placeholder="详细描述你的学习目标，例如：完成JavaScript基础语法学习，包括变量、函数、对象等核心概念"
+            value="{{formData.description}}"
+            bindinput="onDescriptionInput"
+            maxlength="500"
+            auto-height
+          />
+          <text class="form-hint">选填，不超过500个字符</text>
+        </view>
+        
+        <!-- 目标日期 -->
+        <view class="form-item">
+          <text class="form-label">目标完成日期</text>
+          <picker 
+            mode="date" 
+            value="{{formData.targetDate}}"
+            start="{{minDate}}"
+            bindchange="onDateChange">
+            <view class="picker-view">
+              <text class="picker-text">{{formData.targetDate || '选择目标完成日期（选填）'}}</text>
+              <text class="picker-arrow">></text>
+            </view>
+          </picker>
+        </view>
+        
+        <!-- 优先级 -->
+        <view class="form-item">
+          <text class="form-label">优先级</text>
+          <view class="priority-options">
+            <view 
+              class="priority-option {{formData.priority === item ? 'selected' : ''}}"
+              wx:for="{{[1,2,3,4,5]}}" 
+              wx:key="*this"
+              wx:for-item="item"
+              bindtap="selectPriority"
+              data-priority="{{item}}">
+              <text class="priority-number">{{item}}</text>
+              <text class="priority-label">{{item === 5 ? '最高' : item === 1 ? '最低' : ''}}</text>
+            </view>
+          </view>
+          <text class="form-hint">1-5，数字越大优先级越高</text>
+        </view>
+        
+        <!-- 当前进度（仅编辑时显示） -->
+        <view class="form-item" wx:if="{{editingGoal}}">
+          <text class="form-label">当前进度</text>
+          <view class="progress-input-wrapper">
+            <slider 
+              min="0" 
+              max="100" 
+              value="{{formData.progress}}" 
+              bindchange="onProgressChange"
+              activeColor="#FF7A45"
+              backgroundColor="#E8E8E8"
+              block-size="32"
+              block-color="#FF7A45"
+            />
+            <text class="progress-value-display">{{formData.progress}}%</text>
+          </view>
+        </view>
+        
+        <!-- 状态（仅编辑时显示） -->
+        <view class="form-item" wx:if="{{editingGoal}}">
+          <text class="form-label">状态</text>
+          <view class="status-options">
+            <view 
+              class="status-option {{formData.status === item.value ? 'selected' : ''}}"
+              wx:for="{{statusOptions}}" 
+              wx:key="value"
+              wx:for-item="item"
+              bindtap="selectStatus"
+              data-status="{{item.value}}">
+              <text class="status-icon">{{item.icon}}</text>
+              <text class="status-text">{{item.label}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 表单按钮 -->
+      <view class="form-actions">
+        <button class="btn btn-cancel" bindtap="cancelEdit">取消</button>
+        <button class="btn btn-submit" bindtap="saveGoal" disabled="{{saving}}">
+          {{saving ? '保存中...' : '保存'}}
+        </button>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 添加按钮 -->
+  <view class="add-button-wrapper" wx:if="{{!showForm}}">
+    <button class="btn-add" bindtap="showAddForm">
+      <text class="btn-add-icon">+</text>
+      <text class="btn-add-text">添加学习目标</text>
+    </button>
+  </view>
+</view>
+

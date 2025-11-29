@@ -1,24 +1,15 @@
 /* pages/result/result.wxss */
 
-/* 全局变量 - 小程序使用page选择器 */
+/* 全局变量 - 使用全局变量 */
 page {
-  --primary-color: #FF7A45;
-  --primary-light: rgba(255, 122, 69, 0.1);
-  --background-color: #f5f7fa;
-  --card-background: #ffffff;
-  --text-primary: #333333;
-  --text-secondary: #666666;
-  --border-color: #e8e8e8;
-  --success-color: #52c41a;
-  --warning-color: #faad14;
-  --error-color: #ff4d4f;
+  /* 继承全局变量 */
 }
 
 .container {
-  padding: 40rpx 32rpx;
-  background-color: var(--background-color);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  background: linear-gradient(135deg, var(--background-color) 0%, #FFFAF0 100%);
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-family);
 }
 
 /* 方案1：简约现代风格 */
@@ -229,13 +220,25 @@ page {
 
 /* 结果卡片基础样式 */
 .result-card {
-  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
-  border-radius: 24rpx;
-  padding: 64rpx 48rpx;
-  margin-bottom: 40rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  background: linear-gradient(135deg, var(--card-background) 0%, #fafafa 100%);
+  border-radius: var(--radius-xxl);
+  padding: var(--spacing-xxxl) var(--spacing-xxl);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
   animation: fadeInUp 0.6s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #FF9500 100%);
 }
 
 /* 结果头部 */
@@ -378,18 +381,33 @@ page {
 }
 
 .next-btn {
-  background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
-  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.3);
+  box-shadow: var(--shadow-primary);
+  position: relative;
+  overflow: hidden;
 }
 
-.next-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 6rpx 16rpx rgba(255, 122, 69, 0.4);
+.next-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.next-btn:active::before {
+  width: 300rpx;
+  height: 300rpx;
 }
 
 .next-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
   box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.4);
 }
 

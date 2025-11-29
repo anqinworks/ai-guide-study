@@ -10,26 +10,61 @@
     
     <!-- 成绩概览 -->
     <view class="score-overview">
-      <view class="score-circle">
-        <view class="score-inner">
-          <text class="score-value">{{accuracy}}%</text>
-          <text class="score-label">正确率</text>
+      <!-- 学习率环形图 -->
+      <view class="accuracy-chart-section">
+        <view class="chart-header">
+          <text class="chart-title">学习率分析</text>
+          <text class="chart-subtitle">本次答题正确率</text>
+        </view>
+        <view class="accuracy-chart-container">
+          <view class="accuracy-ring-chart">
+            <view class="ring-bg"></view>
+            <view class="ring-progress" style="background: conic-gradient(#FF7A45 0deg, #FF7A45 {{accuracy * 3.6}}deg, #F0F0F0 {{accuracy * 3.6}}deg, #F0F0F0 360deg);"></view>
+            <view class="ring-inner">
+              <text class="ring-value">{{accuracy}}%</text>
+              <text class="ring-label">正确率</text>
+            </view>
+          </view>
+          
+          <!-- 柱状图对比 -->
+          <view class="accuracy-bar-chart">
+            <view class="bar-item">
+              <view class="bar-label">正确</view>
+              <view class="bar-wrapper">
+                <view class="bar-fill correct-bar" style="width: {{accuracy}}%"></view>
+                <text class="bar-value">{{accuracy}}%</text>
+              </view>
+            </view>
+            <view class="bar-item">
+              <view class="bar-label">错误</view>
+              <view class="bar-wrapper">
+                <view class="bar-fill wrong-bar" style="width: {{100 - accuracy}}%"></view>
+                <text class="bar-value">{{100 - accuracy}}%</text>
+              </view>
+            </view>
+          </view>
         </view>
       </view>
+      
+      <!-- 统计数据网格 -->
       <view class="score-stats">
         <view class="score-stat-item">
+          <view class="stat-icon">📝</view>
           <text class="score-stat-value">{{totalQuestions}}</text>
           <text class="score-stat-label">总题数</text>
         </view>
         <view class="score-stat-item">
+          <view class="stat-icon">✅</view>
           <text class="score-stat-value correct">{{correctAnswers}}</text>
           <text class="score-stat-label">答对题数</text>
         </view>
         <view class="score-stat-item">
+          <view class="stat-icon">❌</view>
           <text class="score-stat-value wrong">{{totalQuestions - correctAnswers}}</text>
           <text class="score-stat-label">答错题数</text>
         </view>
         <view class="score-stat-item">
+          <view class="stat-icon">⏱️</view>
           <text class="score-stat-value">{{totalTime}}s</text>
           <text class="score-stat-label">总耗时</text>
         </view>

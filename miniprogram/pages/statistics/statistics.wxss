@@ -1,22 +1,31 @@
 /* pages/statistics/statistics.wxss */
 .container {
-  padding: 20rpx;
-  background-color: #f5f7fa;
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--background-color) 0%, #FFFAF0 100%);
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-family);
 }
 
 .header {
   text-align: center;
-  margin-bottom: 30rpx;
-  padding: 20rpx 0;
+  margin-bottom: var(--spacing-xl);
+  padding: var(--spacing-lg) 0;
+  background-color: var(--card-background);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-xl);
 }
 
 .title {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: bold;
-  color: #333;
+  color: var(--text-primary);
   letter-spacing: 1rpx;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #FF9500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* 加载状态 */
@@ -25,21 +34,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100rpx 0;
-  background-color: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-  margin: 20rpx 0;
+  padding: var(--spacing-xxxl) 0;
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: var(--spacing-lg) 0;
 }
 
 .loading-spinner {
   width: 60rpx;
   height: 60rpx;
   border: 6rpx solid rgba(255, 122, 69, 0.2);
-  border-top: 6rpx solid #FF7A45;
-  border-radius: 50%;
+  border-top: 6rpx solid var(--primary-color);
+  border-radius: var(--radius-circle);
   animation: spin 1s linear infinite;
-  margin-bottom: 20rpx;
+  margin-bottom: var(--spacing-lg);
 }
 
 @keyframes spin {
@@ -49,7 +58,7 @@
 
 .loading-text {
   font-size: 28rpx;
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -59,11 +68,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80rpx 40rpx;
-  background-color: #fff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
-  margin: 20rpx 0;
+  padding: var(--spacing-xxxl) var(--spacing-xl);
+  background-color: var(--card-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: var(--spacing-lg) 0;
   text-align: center;
 }
 
@@ -74,31 +83,26 @@
 
 .error-text {
   font-size: 28rpx;
-  color: #ff4d4f;
-  margin-bottom: 30rpx;
-  line-height: 1.5;
+  color: var(--error-color);
+  margin-bottom: var(--spacing-xl);
+  line-height: 1.6;
 }
 
 .retry-btn {
-  padding: 16rpx 60rpx;
-  background: linear-gradient(135deg, #FF7A45 0%, #FF8C66 100%);
+  padding: var(--spacing-md) 60rpx;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #FF8C66 100%);
   color: white;
   border: none;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   font-weight: 600;
-  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.3);
-  transition: all 0.3s ease;
-}
-
-.retry-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 6rpx 16rpx rgba(255, 122, 69, 0.4);
+  box-shadow: var(--shadow-primary);
+  transition: all var(--transition-base);
 }
 
 .retry-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.3);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.4);
 }
 
 /* 数据容器 */

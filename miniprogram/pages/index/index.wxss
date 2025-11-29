@@ -2,14 +2,14 @@
 
 /* 全局样式重置 */
 page {
-  background-color: #F8F9FA;
+  background: linear-gradient(135deg, var(--background-color) 0%, #FFFAF0 100%);
 }
 
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40rpx 32rpx;
+  padding: var(--spacing-xl) var(--spacing-xl);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -36,19 +36,19 @@ page {
   }
 }
 
-/* Logo文字样式 - 设计方案1：简约现代风格 */
+/* Logo文字样式 - 简约现代风格 */
 .logo-text {
   font-size: 56rpx;
   font-weight: 800;
-  color: #FF7A45;
-  margin-bottom: 12rpx;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-md);
   letter-spacing: 4rpx;
-  background: linear-gradient(135deg, #FF7A45 0%, #FF9500 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, #FF9500 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.3);
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
   animation: logoFadeIn 1s ease-out;
 }
 
@@ -103,10 +103,11 @@ page {
 
 .subtitle {
   font-size: 28rpx;
-  color: #8C8C8C;
+  color: var(--text-tertiary);
   margin-bottom: 0;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
+  letter-spacing: 0.5rpx;
 }
 
 /* 核心答题入口区域 */
@@ -129,26 +130,40 @@ page {
 
 /* 主题输入卡片 - 优化设计 */
 .topic-input-card {
-  background-color: #FFFFFF;
+  background-color: var(--card-background);
   padding: 60rpx 48rpx;
-  border-radius: 24rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-xxl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-base);
   border: 1rpx solid #F5F5F5;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 680rpx;
 }
 
-.topic-input-card:hover {
-  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+.topic-input-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6rpx;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #FF9500 100%);
+}
+
+.topic-input-card:active {
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2rpx);
 }
 
 /* 卡片标题样式 */
 .card-title {
-  font-size: 38rpx;
+  font-size: 40rpx;
   font-weight: 700;
-  color: #333333;
+  color: var(--text-primary);
   display: block;
-  margin-bottom: 16rpx;
+  margin-bottom: var(--spacing-md);
   text-align: center;
   letter-spacing: 1.2rpx;
   line-height: 1.4;
@@ -157,11 +172,11 @@ page {
 /* 卡片副标题样式 */
 .card-subtitle {
   font-size: 28rpx;
-  color: #8C8C8C;
+  color: var(--text-tertiary);
   display: block;
   margin-bottom: 52rpx;
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.8;
   font-weight: 400;
   letter-spacing: 0.5rpx;
 }
@@ -169,19 +184,19 @@ page {
 /* 输入框样式 - 现代专业设计 */
 .input {
   width: 100%;
-  border: 2rpx solid #F0F0F0;
-  border-radius: 24rpx;
+  border: 2rpx solid var(--border-color);
+  border-radius: var(--radius-xxl);
   padding: 28rpx 40rpx;
   font-size: 32rpx;
-  margin-bottom: 40rpx;
-  background-color: #FFFFFF;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: var(--spacing-xl);
+  background-color: var(--card-background);
+  transition: all var(--transition-base);
   box-sizing: border-box;
-  color: #333333;
+  color: var(--text-primary);
   font-weight: 400;
   line-height: 1.8;
   letter-spacing: 0.5rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
   text-align: left;
   display: block;
   height: auto;
@@ -193,14 +208,14 @@ page {
 }
 
 .input:focus {
-  border-color: #FF7A45;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08), 0 0 0 8rpx rgba(255, 122, 69, 0.12);
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-md), 0 0 0 8rpx var(--primary-light);
   outline: none;
   transform: translateY(-1rpx);
 }
 
 .input::placeholder {
-  color: #C9C9C9;
+  color: var(--text-tertiary);
   font-weight: 300;
   letter-spacing: 0.3rpx;
   line-height: 1.8;
@@ -231,41 +246,69 @@ page {
 /* 主按钮样式 - 渐变设计 */
 .primary-btn {
   width: 100%;
-  background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
-  padding: 32rpx;
-  border-radius: 16rpx;
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-lg);
   font-size: 34rpx;
   font-weight: 600;
   text-align: center;
   margin: 0;
-  box-shadow: 0 4rpx 20rpx rgba(255, 122, 69, 0.25);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-primary);
+  transition: all var(--transition-base);
   border: none;
   letter-spacing: 2rpx;
+  position: relative;
+  overflow: hidden;
 }
 
-.primary-btn:hover {
-  transform: translateY(-2rpx);
-  box-shadow: 0 8rpx 32rpx rgba(255, 122, 69, 0.35);
+.primary-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.primary-btn:active::before {
+  width: 300rpx;
+  height: 300rpx;
 }
 
 .primary-btn:active {
   transform: translateY(0);
+  scale: 0.98;
   box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
-  background: linear-gradient(135deg, #FF5722 0%, #FF7A45 100%);
 }
 
 /* 推荐主题区域 */
 .recommend-section {
   width: 100%;
-  margin-bottom: 48rpx;
-  background-color: #FFFFFF;
-  padding: 40rpx 32rpx;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: var(--spacing-xxl);
+  background-color: var(--card-background);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
   animation: fadeInUp 0.6s ease-out 0.4s both;
   border: 1rpx solid #F0F0F0;
+  max-width: 680rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.recommend-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #FF9500 100%);
 }
 
 /* 历史主题区域 */
@@ -282,13 +325,13 @@ page {
 
 /* 区域标题样式 */
 .section-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 700;
-  color: #333333;
-  margin-bottom: 32rpx;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xl);
   display: block;
   position: relative;
-  padding-left: 16rpx;
+  padding-left: var(--spacing-md);
   letter-spacing: 1rpx;
 }
 
@@ -300,7 +343,7 @@ page {
   transform: translateY(-50%);
   width: 8rpx;
   height: 32rpx;
-  background: linear-gradient(180deg, #FF7A45 0%, #FF9500 100%);
+  background: linear-gradient(180deg, var(--primary-color) 0%, #FF9500 100%);
   border-radius: 4rpx;
 }
 
@@ -314,33 +357,26 @@ page {
 
 /* 主题标签样式 - 简约圆角设计 */
 .topic-item {
-  padding: 24rpx 36rpx;
-  background-color: #FFFFFF;
-  color: #FF7A45;
+  padding: var(--spacing-lg) 36rpx;
+  background-color: var(--card-background);
+  color: var(--primary-color);
   border-radius: 32rpx;
   font-size: 28rpx;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2rpx solid #FFEBE5;
-  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.08);
+  transition: all var(--transition-base);
+  border: 2rpx solid var(--primary-light);
+  box-shadow: var(--shadow-sm);
   line-height: 1.4;
   font-weight: 500;
   flex-shrink: 0;
 }
 
-.topic-item:hover {
-  background-color: #FF7A45;
-  color: white;
-  transform: translateY(-4rpx);
-  box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.25);
-  border-color: #FF7A45;
-}
-
 .topic-item:active {
-  background-color: #FF5722;
+  background-color: var(--primary-color);
+  color: white;
   transform: translateY(-2rpx);
-  box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
-  border-color: #FF5722;
+  box-shadow: 0 8rpx 24rpx rgba(255, 122, 69, 0.25);
+  border-color: var(--primary-color);
 }
 
 /* 响应式设计 - 适配不同屏幕尺寸 */

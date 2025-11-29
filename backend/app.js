@@ -9,6 +9,7 @@ const aiQaRoutes = require('./routes/ai-qa');
 const answerRoutes = require('./routes/answer');
 const reportRoutes = require('./routes/report');
 const statisticsRoutes = require('./routes/statistics');
+const learningGoalRoutes = require('./routes/learning-goal');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.use('/api/ai-qa', aiQaRoutes);
 app.use('/api/answer', answerRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/statistics', statisticsRoutes);
+app.use('/api/learning-goal', learningGoalRoutes);
 
 // 健康检查路由
 app.get('/health', (req, res) => {

@@ -11,7 +11,9 @@ Page({
     learningSuggestions: null,
     wrongQuestions: [],
     loading: false,
-    isHistoryReport: false // 标识是否为历史会话报告
+    isHistoryReport: false, // 标识是否为历史会话报告
+    accuracyAngle: 0, // 环形图角度
+    accuracyProgress: 0 // 环形图进度
   },
 
   onLoad(options) {
@@ -96,8 +98,8 @@ Page({
       totalTime
     });
     
-    // 设置CSS变量
-    this.setScoreCircleStyle(Math.round(accuracy));
+    // 设置CSS变量（用于环形图）
+    this.setAccuracyChartStyle(Math.round(accuracy));
     
     // 清理临时数据
     app.globalData.sessionReportData = null;
@@ -171,8 +173,8 @@ Page({
       isHistoryReport: false
     });
     
-    // 设置CSS变量
-    this.setScoreCircleStyle(accuracy);
+    // 设置CSS变量（用于环形图）
+    this.setAccuracyChartStyle(accuracy);
   },
 
   /**
@@ -255,10 +257,20 @@ Page({
   },
 
   /**
-   * 设置分数圆圈的样式
+   * 设置学习率图表的样式
    */
-  setScoreCircleStyle(accuracy) {
-    wx.createSelectorQuery().select('.score-circle').boundingClientRect().exec((rects) => {
+  setAccuracyChartStyle(accuracy) {
+    // 计算环形图的进度角度
+    const progress = Math.min(100, Math.max(0, accuracy));
+    const angle = (progress / 100) * 360;
+    
+    // 设置环形图进度
+    this.setData({
+      accuracyAngle: angle,
+      accuracyProgress: progress
+    });
+    
+    wx.createSelectorQuery().select('.accuracy-ring-chart').boundingClientRect().exec((rects) => {
       if (rects[0]) {
         wx.setNavigationBarColor({ backgroundColor: '#FF7A45' });
       }
