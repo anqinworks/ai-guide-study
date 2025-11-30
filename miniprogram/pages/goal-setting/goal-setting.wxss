@@ -312,16 +312,89 @@
   gap: var(--spacing-sm);
 }
 
+/* 表单标签包装器 - 统一对齐 */
+.form-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  min-height: 48rpx; /* 确保所有标签行高度一致 */
+}
+
+.form-label-icon {
+  font-size: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48rpx;
+  height: 48rpx;
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(255, 122, 69, 0.1) 100%);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .form-label {
   font-size: 28rpx;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  flex: 1;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  min-height: 48rpx; /* 与图标高度对齐 */
 }
 
 .form-label.required::after {
   content: ' *';
   color: var(--error-color);
+}
+
+/* 输入框包装器 */
+.form-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.form-input-enhanced {
+  width: 100%;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  padding-right: 120rpx;
+  border: 2rpx solid var(--border-color);
+  border-radius: var(--radius-lg);
+  font-size: 32rpx;
+  color: var(--text-primary);
+  background-color: #FAFAFA;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  line-height: 1.5;
+  height: auto;
+  min-height: 48rpx;
+  display: block;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.form-input-enhanced:focus {
+  border-color: var(--primary-color);
+  background-color: #FFFFFF;
+  box-shadow: 0 0 0 6rpx var(--primary-light);
+  outline: none;
+}
+
+/* 字符计数 */
+.input-char-count {
+  position: absolute;
+  right: var(--spacing-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.char-count-text {
+  font-size: 24rpx;
+  color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 .form-input,
@@ -335,6 +408,11 @@
   background-color: var(--card-background);
   transition: all var(--transition-base);
   box-sizing: border-box;
+  min-height: 48rpx; /* 确保输入框高度一致 */
+  display: block;
+  vertical-align: middle;
+  text-align: left;
+  line-height: 1.5;
 }
 
 .form-input:focus,
@@ -347,6 +425,13 @@
 .form-textarea {
   min-height: 120rpx;
   line-height: 1.6;
+  display: block;
+  vertical-align: top;
+  text-align: left;
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+  resize: none;
+  overflow-y: auto;
 }
 
 .form-hint {
@@ -364,6 +449,8 @@
   border-radius: var(--radius-lg);
   background-color: var(--card-background);
   transition: all var(--transition-base);
+  min-height: 48rpx; /* 确保选择器高度一致 */
+  box-sizing: border-box;
 }
 
 .picker-view:active {
@@ -430,20 +517,244 @@
   color: var(--text-tertiary);
 }
 
-/* 进度输入 */
-.progress-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
+/* 进度表单项 */
+.progress-form-item {
+  margin-top: var(--spacing-md);
 }
 
-.progress-value-display {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: var(--primary-color);
-  min-width: 60rpx;
-  text-align: right;
+/* 进度可视化卡片 */
+.progress-visual-card {
+  background: linear-gradient(135deg, #FFF8F5 0%, #FFFFFF 100%);
+  border: 2rpx solid #FFE5D9;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
+  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.08);
 }
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.progress-label-text {
+  font-size: 28rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.progress-percentage-badge {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #FF9500 100%);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.3);
+}
+
+.progress-percentage-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #FFFFFF;
+  line-height: 1;
+}
+
+.progress-percentage-unit {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  opacity: 0.9;
+}
+
+/* 进度条容器 */
+.progress-bar-container {
+  position: relative;
+  margin-bottom: var(--spacing-md);
+}
+
+.progress-bar-track {
+  position: relative;
+  width: 100%;
+  height: 32rpx; /* 增加高度以便拖动 */
+  background: linear-gradient(90deg, #F0F0F0 0%, #E8E8E8 100%);
+  border-radius: 16rpx;
+  overflow: visible; /* 改为visible以显示拖动指示器 */
+  box-shadow: inset 0 2rpx 4rpx rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  touch-action: none; /* 防止页面滚动 */
+  user-select: none; /* 防止文本选择 */
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+}
+
+.progress-bar-fill {
+  position: relative;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #FF9500 50%, #FF7A45 100%);
+  border-radius: 16rpx;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2rpx 8rpx rgba(255, 122, 69, 0.4);
+  overflow: visible;
+}
+
+/* 拖动指示器 */
+.progress-drag-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40rpx;
+  height: 40rpx;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.drag-handle-circle {
+  width: 100%;
+  height: 100%;
+  background: #FFFFFF;
+  border: 4rpx solid var(--primary-color);
+  border-radius: 50%;
+  box-shadow: 0 4rpx 12rpx rgba(255, 122, 69, 0.5), 0 0 0 4rpx rgba(255, 122, 69, 0.2);
+  transition: all 0.2s ease;
+}
+
+.progress-bar-track:active .drag-handle-circle {
+  transform: scale(1.2);
+  box-shadow: 0 6rpx 16rpx rgba(255, 122, 69, 0.6), 0 0 0 6rpx rgba(255, 122, 69, 0.3);
+}
+
+.drag-handle-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--primary-color);
+  opacity: 0.3;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* 拖动提示 */
+.progress-drag-hint {
+  position: absolute;
+  top: -60rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #FFFFFF;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 22rpx;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 20;
+}
+
+.progress-drag-hint::after {
+  content: '';
+  position: absolute;
+  bottom: -8rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8rpx solid transparent;
+  border-right: 8rpx solid transparent;
+  border-top: 8rpx solid rgba(0, 0, 0, 0.75);
+}
+
+.progress-drag-hint.active {
+  opacity: 1;
+}
+
+.drag-hint-text {
+  font-size: 22rpx;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.progress-bar-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60rpx;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 100%);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* 进度里程碑 */
+.progress-milestones {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20rpx; /* 增加内边距避免与拖动指示器重叠 */
+  pointer-events: none;
+  z-index: 1;
+}
+
+.milestone {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background-color: #D9D9D9;
+  border: 2rpx solid #FFFFFF;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 2rpx #F0F0F0;
+}
+
+.milestone.reached {
+  background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-color) 100%);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2rpx var(--primary-light), 0 2rpx 8rpx rgba(255, 122, 69, 0.4);
+  transform: scale(1.2);
+}
+
+/* 进度状态提示 */
+.progress-status-hint {
+  text-align: center;
+  padding-top: var(--spacing-sm);
+}
+
+.status-hint-text {
+  font-size: 24rpx;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* 移除旧的滑块样式 - 已整合到进度条中 */
 
 /* 状态选项 */
 .status-options {
@@ -590,6 +901,186 @@
   
   .priority-option {
     width: 100%;
+  }
+
+  /* 小屏幕下的目标名称输入框优化 */
+  .form-input-enhanced {
+    font-size: 28rpx;
+    padding: var(--spacing-md) var(--spacing-lg);
+    padding-right: 100rpx;
+  }
+
+  .input-char-count {
+    right: var(--spacing-md);
+  }
+
+  .char-count-text {
+    font-size: 22rpx;
+  }
+
+  /* 小屏幕下的进度卡片优化 */
+  .progress-visual-card {
+    padding: var(--spacing-lg);
+  }
+
+  .progress-percentage-value {
+    font-size: 32rpx;
+  }
+
+  .progress-bar-track {
+    height: 20rpx;
+  }
+
+  .milestone {
+    width: 10rpx;
+    height: 10rpx;
+  }
+}
+
+/* 中等屏幕优化 */
+@media (min-width: 376rpx) and (max-width: 414rpx) {
+  .form-input-enhanced {
+    font-size: 30rpx;
+  }
+
+  .progress-percentage-value {
+    font-size: 34rpx;
+  }
+}
+
+/* 大屏幕优化 */
+@media (min-width: 415rpx) {
+  .form-input-enhanced {
+    font-size: 34rpx;
+    padding: var(--spacing-xl) var(--spacing-xxl);
+    padding-right: 140rpx;
+  }
+
+  .progress-visual-card {
+    padding: var(--spacing-xxl);
+  }
+
+  .progress-percentage-value {
+    font-size: 40rpx;
+  }
+
+  .progress-bar-track {
+    height: 28rpx;
+  }
+}
+
+/* 动画增强 */
+.form-item {
+  animation: fadeInUp 0.4s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-visual-card {
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.progress-bar-fill {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* 输入框聚焦动画 */
+.form-input-enhanced {
+  position: relative;
+}
+
+.form-input-enhanced:focus {
+  animation: inputFocus 0.3s ease-out;
+}
+
+@keyframes inputFocus {
+  0% {
+    box-shadow: 0 0 0 0 var(--primary-light);
+  }
+  50% {
+    box-shadow: 0 0 0 8rpx var(--primary-light);
+  }
+  100% {
+    box-shadow: 0 0 0 6rpx var(--primary-light);
+  }
+}
+
+/* 进度百分比徽章动画 */
+.progress-percentage-badge {
+  animation: badgePulse 0.6s ease-out;
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 里程碑到达动画 */
+.milestone.reached {
+  animation: milestoneReach 0.5s ease-out;
+}
+
+@keyframes milestoneReach {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 1;
   }
 }
 

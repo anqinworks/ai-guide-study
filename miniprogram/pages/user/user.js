@@ -161,47 +161,108 @@ Page({
     }
   },
 
-  // 加载学习统计数据
-  loadLearningStats() {
+  // 加载学习统计数据（从后端API获取真实数据）
+  async loadLearningStats() {
     if (!this.data.isLoggedIn) {
       return
     }
     
     try {
-      const userId = this.data.userInfo.id || 'default'
-      const statsKey = `learning_stats_${userId}`
-      const storedData = wx.getStorageSync(statsKey)
+      // 从后端API获取统计数据
+      const res = await request.get('/statistics/summary')
       
-      const today = this.getTodayString()
-      let learningStats = {
-        todayMinutes: 0,
-        totalMinutes: 0,
-        targetMinutes: 30,
-        continuousDays: 0,
-        progress: 0,
-        lastStudyDate: ''
-      }
-      
-      if (storedData) {
-        learningStats = JSON.parse(storedData)
+      if (res.success && res.data) {
+        const data = res.data
         
-        // 如果今天没有学习，重置今日时长
-        if (learningStats.lastStudyDate !== today) {
-          learningStats.todayMinutes = 0
-          // 检查是否连续学习
-          const yesterday = this.getYesterdayString()
-          if (learningStats.lastStudyDate !== yesterday) {
-            learningStats.continuousDays = 0
-          }
+        // 数据验证
+        const validationErrors = []
+        
+        // 验证今日学习时长
+        let todayMinutes = parseInt(data.todayMinutes) || 0
+        if (isNaN(todayMinutes) || todayMinutes < 0) {
+          validationErrors.push('今日学习时长数据异常')
+          todayMinutes = 0
         }
+        
+        // 验证总学习时长
+        let totalMinutes = parseInt(data.totalMinutes) || 0
+        if (isNaN(totalMinutes) || totalMinutes < 0) {
+          validationErrors.push('总学习时长数据异常')
+          totalMinutes = 0
+        }
+        
+        // 验证每日目标
+        let targetMinutes = parseInt(data.targetMinutes) || 30
+        if (isNaN(targetMinutes) || targetMinutes <= 0) {
+          validationErrors.push('每日目标数据异常，使用默认值30分钟')
+          targetMinutes = 30
+        }
+        
+        // 验证连续学习天数
+        let continuousDays = parseInt(data.continuousDays) || 0
+        if (isNaN(continuousDays) || continuousDays < 0) {
+          validationErrors.push('连续学习天数数据异常')
+          continuousDays = 0
+        }
+        
+        // 计算今日进度（确保进度在0-100之间）
+        let progress = targetMinutes > 0 
+          ? Math.min(100, Math.max(0, Math.round((todayMinutes / targetMinutes) * 100)))
+          : 0
+        
+        // 如果进度计算异常，进行修正
+        if (isNaN(progress) || progress < 0 || progress > 100) {
+          validationErrors.push('进度计算异常，已自动修正')
+          progress = Math.max(0, Math.min(100, progress || 0))
+        }
+        
+        // 记录验证错误（如果有）
+        if (validationErrors.length > 0) {
+          console.warn('[学习统计] 数据验证警告:', validationErrors)
+        }
+        
+        // 如果后端返回了验证错误，也记录
+        if (data.validationErrors && data.validationErrors.length > 0) {
+          console.warn('[学习统计] 后端数据验证警告:', data.validationErrors)
+        }
+        
+        const learningStats = {
+          todayMinutes: todayMinutes,
+          totalMinutes: totalMinutes,
+          targetMinutes: targetMinutes,
+          continuousDays: continuousDays,
+          progress: progress,
+          lastUpdated: data.lastUpdated || new Date().toISOString()
+        }
+        
+        this.setData({ learningStats })
+        
+        console.log('[学习统计] 数据加载成功:', learningStats)
+      } else {
+        // API返回失败，使用默认值
+        console.warn('[学习统计] API返回失败，使用默认值')
+        this.setData({
+          learningStats: {
+            todayMinutes: 0,
+            totalMinutes: 0,
+            targetMinutes: 30,
+            continuousDays: 0,
+            progress: 0
+          }
+        })
       }
-      
-      // 计算今日进度
-      learningStats.progress = Math.min(100, Math.round((learningStats.todayMinutes / learningStats.targetMinutes) * 100))
-      
-      this.setData({ learningStats })
     } catch (err) {
       console.error('加载学习统计数据失败', err)
+      // 出错时使用默认值，避免页面显示错误
+      this.setData({
+        learningStats: {
+          todayMinutes: 0,
+          totalMinutes: 0,
+          targetMinutes: 30,
+          continuousDays: 0,
+          progress: 0
+        }
+      })
     }
   },
 
@@ -215,13 +276,25 @@ Page({
       const res = await request.get('/learning-goal')
       
       if (res.success && res.goals) {
-        // 格式化日期显示
-        const learningGoals = res.goals.map(goal => ({
-          ...goal,
-          targetDate: goal.targetDate ? this.formatGoalDate(goal.targetDate) : null
-        }))
+        // 格式化日期显示并重新计算进度
+        const learningGoals = res.goals.map(goal => {
+          // 确保进度值在0-100之间
+          let progress = parseInt(goal.progress) || 0
+          if (isNaN(progress) || progress < 0) {
+            progress = 0
+          } else if (progress > 100) {
+            progress = 100
+          }
+          
+          return {
+            ...goal,
+            progress: progress, // 确保进度值正确
+            targetDate: goal.targetDate ? this.formatGoalDate(goal.targetDate) : null
+          }
+        })
         
         this.setData({ learningGoals })
+        console.log('[学习目标] 加载成功，共', learningGoals.length, '个目标')
       } else {
         // 如果获取失败，设置为空数组
         this.setData({ learningGoals: [] })
@@ -253,6 +326,13 @@ Page({
   // 获取今天的日期字符串
   getTodayString() {
     const date = new Date()
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  },
+
+  // 获取昨天的日期字符串
+  getYesterdayString() {
+    const date = new Date()
+    date.setDate(date.getDate() - 1)
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
   },
 

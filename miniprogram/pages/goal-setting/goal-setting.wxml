@@ -65,20 +65,33 @@
       <view class="form-content">
         <!-- 目标名称 -->
         <view class="form-item">
-          <text class="form-label required">目标名称</text>
-          <input 
-            class="form-input" 
-            placeholder="例如：掌握JavaScript基础语法"
-            value="{{formData.name}}"
-            bindinput="onNameInput"
-            maxlength="200"
-          />
+          <view class="form-label-wrapper">
+            <view class="form-label-icon">📝</view>
+            <text class="form-label required">目标名称</text>
+          </view>
+          <view class="form-input-wrapper">
+            <input 
+              class="form-input-enhanced" 
+              placeholder="例如：掌握JavaScript基础语法"
+              value="{{formData.name}}"
+              bindinput="onNameInput"
+              bindfocus="onNameFocus"
+              bindblur="onNameBlur"
+              maxlength="200"
+            />
+            <view class="input-char-count">
+              <text class="char-count-text">{{formData.name.length || 0}}/200</text>
+            </view>
+          </view>
           <text class="form-hint">必填，不超过200个字符</text>
         </view>
         
         <!-- 目标描述 -->
         <view class="form-item">
-          <text class="form-label">目标描述</text>
+          <view class="form-label-wrapper">
+            <view class="form-label-icon">📄</view>
+            <text class="form-label">目标描述</text>
+          </view>
           <textarea 
             class="form-textarea" 
             placeholder="详细描述你的学习目标，例如：完成JavaScript基础语法学习，包括变量、函数、对象等核心概念"
@@ -92,7 +105,10 @@
         
         <!-- 目标日期 -->
         <view class="form-item">
-          <text class="form-label">目标完成日期</text>
+          <view class="form-label-wrapper">
+            <view class="form-label-icon">📅</view>
+            <text class="form-label">目标完成日期</text>
+          </view>
           <picker 
             mode="date" 
             value="{{formData.targetDate}}"
@@ -107,7 +123,10 @@
         
         <!-- 优先级 -->
         <view class="form-item">
-          <text class="form-label">优先级</text>
+          <view class="form-label-wrapper">
+            <view class="form-label-icon">⭐</view>
+            <text class="form-label">优先级</text>
+          </view>
           <view class="priority-options">
             <view 
               class="priority-option {{formData.priority === item ? 'selected' : ''}}"
@@ -124,20 +143,57 @@
         </view>
         
         <!-- 当前进度（仅编辑时显示） -->
-        <view class="form-item" wx:if="{{editingGoal}}">
-          <text class="form-label">当前进度</text>
-          <view class="progress-input-wrapper">
-            <slider 
-              min="0" 
-              max="100" 
-              value="{{formData.progress}}" 
-              bindchange="onProgressChange"
-              activeColor="#FF7A45"
-              backgroundColor="#E8E8E8"
-              block-size="32"
-              block-color="#FF7A45"
-            />
-            <text class="progress-value-display">{{formData.progress}}%</text>
+        <view class="form-item progress-form-item" wx:if="{{editingGoal}}">
+          <view class="form-label-wrapper">
+            <view class="form-label-icon">📊</view>
+            <text class="form-label">当前进度</text>
+          </view>
+          
+          <!-- 进度可视化卡片 -->
+          <view class="progress-visual-card">
+            <view class="progress-header">
+              <text class="progress-label-text">完成进度</text>
+              <view class="progress-percentage-badge">
+                <text class="progress-percentage-value">{{formData.progress}}</text>
+                <text class="progress-percentage-unit">%</text>
+              </view>
+            </view>
+            
+            <!-- 可视化进度条（可拖动） -->
+            <view class="progress-bar-container">
+              <view class="progress-bar-track" 
+                    bindtouchstart="onProgressTouchStart" 
+                    bindtouchmove="onProgressTouchMove" 
+                    bindtouchend="onProgressTouchEnd"
+                    catchtouchstart="onProgressTouchStart"
+                    catchtouchmove="onProgressTouchMove"
+                    catchtouchend="onProgressTouchEnd">
+                <view class="progress-bar-fill" style="width: {{formData.progress}}%">
+                  <view class="progress-bar-glow"></view>
+                </view>
+                <!-- 拖动指示器 - 放在track层级以便正确定位 -->
+                <view class="progress-drag-handle" style="left: {{formData.progress}}%">
+                  <view class="drag-handle-circle"></view>
+                  <view class="drag-handle-pulse"></view>
+                </view>
+                <view class="progress-milestones">
+                  <view class="milestone milestone-0 {{formData.progress >= 0 ? 'reached' : ''}}"></view>
+                  <view class="milestone milestone-25 {{formData.progress >= 25 ? 'reached' : ''}}"></view>
+                  <view class="milestone milestone-50 {{formData.progress >= 50 ? 'reached' : ''}}"></view>
+                  <view class="milestone milestone-75 {{formData.progress >= 75 ? 'reached' : ''}}"></view>
+                  <view class="milestone milestone-100 {{formData.progress >= 100 ? 'reached' : ''}}"></view>
+                </view>
+                <!-- 拖动提示 -->
+                <view class="progress-drag-hint {{isDraggingProgress ? 'active' : ''}}">
+                  <text class="drag-hint-text">拖动调整进度</text>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 进度状态提示 -->
+            <view class="progress-status-hint">
+              <text class="status-hint-text">{{formData.progress === 0 ? '刚刚开始' : formData.progress < 25 ? '起步阶段' : formData.progress < 50 ? '稳步前进' : formData.progress < 75 ? '进展良好' : formData.progress < 100 ? '接近完成' : '已完成'}}</text>
+            </view>
           </view>
         </view>
         

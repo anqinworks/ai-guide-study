@@ -8,6 +8,10 @@ Page({
     showForm: false,
     editingGoal: null,
     saving: false,
+    nameInputFocused: false,
+    isDraggingProgress: false,
+    progressBarWidth: 0,
+    progressBarLeft: 0,
     formData: {
       name: '',
       description: '',
@@ -136,6 +140,20 @@ Page({
     })
   },
 
+  onNameFocus(e) {
+    // 输入框获得焦点时的处理
+    this.setData({
+      nameInputFocused: true
+    })
+  },
+
+  onNameBlur(e) {
+    // 输入框失去焦点时的处理
+    this.setData({
+      nameInputFocused: false
+    })
+  },
+
   onDescriptionInput(e) {
     this.setData({
       'formData.description': e.detail.value
@@ -148,9 +166,102 @@ Page({
     })
   },
 
-  onProgressChange(e) {
+  // 进度条触摸开始
+  onProgressTouchStart(e) {
+    if (e && e.stopPropagation) {
+      e.stopPropagation()
+    }
     this.setData({
-      'formData.progress': e.detail.value
+      isDraggingProgress: true
+    })
+    // 延迟执行以确保DOM已渲染
+    setTimeout(() => {
+      this.updateProgressFromTouch(e)
+    }, 10)
+  },
+
+  // 进度条触摸移动
+  onProgressTouchMove(e) {
+    if (e && e.stopPropagation) {
+      e.stopPropagation()
+    }
+    if (e && e.preventDefault) {
+      e.preventDefault()
+    }
+    this.updateProgressFromTouch(e)
+  },
+
+  // 进度条触摸结束
+  onProgressTouchEnd(e) {
+    if (e && e.stopPropagation) {
+      e.stopPropagation()
+    }
+    this.updateProgressFromTouch(e)
+    setTimeout(() => {
+      this.setData({
+        isDraggingProgress: false
+      })
+    }, 300)
+  },
+
+  // 根据触摸位置更新进度
+  updateProgressFromTouch(e) {
+    if (!e) return
+    
+    const query = wx.createSelectorQuery().in(this)
+    query.select('.progress-bar-track').boundingClientRect((rect) => {
+      if (!rect || !rect.width) {
+        console.warn('进度条元素未找到或宽度为0')
+        return
+      }
+      
+      // 获取触摸点信息
+      const touch = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0])
+      if (!touch) {
+        console.warn('未获取到触摸点信息')
+        return
+      }
+      
+      // 获取触摸点的X坐标（优先使用clientX，兼容不同环境）
+      const clientX = touch.clientX || touch.pageX || 0
+      if (!clientX) {
+        console.warn('无法获取触摸点X坐标')
+        return
+      }
+      
+      const left = rect.left
+      const width = rect.width
+      
+      // 计算进度百分比
+      let progress = ((clientX - left) / width) * 100
+      progress = Math.max(0, Math.min(100, Math.round(progress)))
+      
+      // 更新进度值
+      this.setData({
+        'formData.progress': progress
+      })
+      
+      console.log('[进度拖动]', {
+        clientX,
+        left,
+        width,
+        progress
+      })
+    }).exec()
+  },
+
+  onProgressChange(e) {
+    const progress = parseInt(e.detail.value) || 0
+    this.setData({
+      'formData.progress': progress
+    })
+  },
+
+  onProgressChanging(e) {
+    // 滑块拖动时的实时更新（保留作为备用）
+    const progress = parseInt(e.detail.value) || 0
+    this.setData({
+      'formData.progress': progress
     })
   },
 
@@ -207,6 +318,9 @@ Page({
           feedback.showSuccess('学习目标更新成功')
           this.cancelEdit()
           this.loadGoals()
+          
+          // 通知"我的页面"刷新学习目标列表
+          this.notifyUserPageRefresh()
         } else {
           feedback.showError(res.message || '更新学习目标失败')
         }
@@ -218,6 +332,9 @@ Page({
           feedback.showSuccess('学习目标创建成功')
           this.cancelEdit()
           this.loadGoals()
+          
+          // 通知"我的页面"刷新学习目标列表
+          this.notifyUserPageRefresh()
         } else {
           feedback.showError(res.message || '创建学习目标失败')
         }
@@ -249,6 +366,9 @@ Page({
             if (result.success) {
               feedback.showSuccess('学习目标已删除')
               this.loadGoals()
+              
+              // 通知"我的页面"刷新学习目标列表
+              this.notifyUserPageRefresh()
             } else {
               feedback.showError(result.message || '删除学习目标失败')
             }
@@ -261,6 +381,28 @@ Page({
         }
       }
     })
+  },
+
+  // 通知"我的页面"刷新学习目标列表
+  notifyUserPageRefresh() {
+    try {
+      // 获取页面栈
+      const pages = getCurrentPages()
+      // 查找"我的页面"
+      const userPage = pages.find(page => page.route === 'pages/user/user')
+      if (userPage) {
+        // 调用"我的页面"的刷新方法
+        if (typeof userPage.loadLearningGoals === 'function') {
+          userPage.loadLearningGoals()
+        }
+        // 同时刷新学习统计数据，确保数据同步
+        if (typeof userPage.loadLearningStats === 'function') {
+          userPage.loadLearningStats()
+        }
+      }
+    } catch (err) {
+      console.warn('通知用户页面刷新失败', err)
+    }
   }
 })
 

@@ -354,4 +354,141 @@ function formatDateShort(date) {
   return `${month}-${day}`;
 }
 
+/**
+ * 获取学习统计摘要（用于"我的页面"）
+ * GET /api/statistics/summary
+ */
+router.get('/summary', authenticate, async (req, res) => {
+  const startTime = Date.now();
+  
+  try {
+    const userId = req.user.userId;
+    console.log(`[学习统计摘要] 用户 ${userId} 请求统计摘要`);
+    
+    // 查询用户的所有答题记录
+    const allRecords = await db.AnswerRecord.findAll({
+      where: { 
+        userId: userId
+      },
+      order: [['createdAt', 'DESC']]
+    });
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(today);
+    todayEnd.setHours(23, 59, 59, 999);
+    
+    // 计算今日学习时长（分钟）
+    const todayRecords = allRecords.filter(record => {
+      if (!record.createdAt) return false;
+      const recordDate = new Date(record.createdAt);
+      return recordDate >= today && recordDate <= todayEnd;
+    });
+    const todayStudyTimeMs = todayRecords.reduce((sum, record) => {
+      return sum + (parseInt(record.elapsedTime) || 0);
+    }, 0);
+    const todayMinutes = Math.round(todayStudyTimeMs / 60000); // 转换为分钟
+    
+    // 计算总学习时长（分钟）
+    const totalStudyTimeMs = allRecords.reduce((sum, record) => {
+      return sum + (parseInt(record.elapsedTime) || 0);
+    }, 0);
+    const totalMinutes = Math.round(totalStudyTimeMs / 60000); // 转换为分钟
+    
+    // 计算连续学习天数
+    const studyDates = new Set();
+    allRecords.forEach(record => {
+      if (record.createdAt) {
+        const recordDate = new Date(record.createdAt);
+        const dateKey = formatDate(recordDate);
+        studyDates.add(dateKey);
+      }
+    });
+    
+    let continuousDays = 0;
+    let checkDate = new Date(today);
+    
+    // 从今天开始往前检查连续学习天数
+    // 如果今天有学习，从今天开始计数；如果今天没有学习，从昨天开始计数
+    const todayStr = formatDate(today);
+    if (!studyDates.has(todayStr)) {
+      // 今天没有学习，从昨天开始检查
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+    
+    // 连续往前检查，直到遇到没有学习的天数
+    while (true) {
+      const checkDateStr = formatDate(checkDate);
+      if (studyDates.has(checkDateStr)) {
+        continuousDays++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    
+    // 获取用户设置的每日目标（从用户表或配置中获取，这里先使用默认值30分钟）
+    // 如果后续需要支持用户自定义目标，可以添加用户设置表
+    const targetMinutes = 30; // 默认30分钟，可以从用户设置中获取
+    
+    // 数据验证和修正
+    const validationErrors = [];
+    let validatedTodayMinutes = todayMinutes;
+    let validatedTotalMinutes = totalMinutes;
+    let validatedContinuousDays = continuousDays;
+    
+    if (todayMinutes < 0 || isNaN(todayMinutes)) {
+      validationErrors.push('今日学习时长数据异常，已修正为0');
+      validatedTodayMinutes = 0;
+    }
+    if (totalMinutes < 0 || isNaN(totalMinutes)) {
+      validationErrors.push('总学习时长数据异常，已修正为0');
+      validatedTotalMinutes = 0;
+    }
+    if (continuousDays < 0 || isNaN(continuousDays)) {
+      validationErrors.push('连续学习天数数据异常，已修正为0');
+      validatedContinuousDays = 0;
+    }
+    
+    // 计算今日进度（使用验证后的数据）
+    let progress = targetMinutes > 0 
+      ? Math.min(100, Math.max(0, Math.round((validatedTodayMinutes / targetMinutes) * 100)))
+      : 0;
+    
+    if (isNaN(progress) || progress < 0 || progress > 100) {
+      validationErrors.push('进度百分比计算异常，已修正');
+      progress = Math.max(0, Math.min(100, progress || 0));
+    }
+    
+    const summaryData = {
+      todayMinutes: validatedTodayMinutes,
+      totalMinutes: validatedTotalMinutes,
+      targetMinutes: targetMinutes,
+      continuousDays: validatedContinuousDays,
+      progress: progress,
+      lastUpdated: new Date().toISOString(),
+      validationErrors: validationErrors.length > 0 ? validationErrors : undefined
+    };
+    
+    const queryDuration = Date.now() - startTime;
+    console.log(`[学习统计摘要] 用户 ${userId} 统计摘要计算完成，耗时: ${queryDuration}ms`, summaryData);
+    
+    res.status(200).json({
+      success: true,
+      data: summaryData
+    });
+  } catch (error) {
+    const queryDuration = Date.now() - startTime;
+    console.error('[学习统计摘要] 计算失败:', {
+      error: error.message,
+      stack: error.stack,
+      duration: `${queryDuration}ms`
+    });
+    res.status(500).json({ 
+      success: false,
+      message: '获取学习统计摘要失败: ' + error.message 
+    });
+  }
+});
+
 module.exports = router;
