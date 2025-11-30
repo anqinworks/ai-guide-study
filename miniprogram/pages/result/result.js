@@ -137,6 +137,7 @@ Page({
       
       // 验证答题数据完整性
       const validResults = answerResults.filter((result, index) => {
+        // 跳过null或undefined的结果
         if (!result) {
           console.warn(`[保存答题记录] 索引 ${index} 的答题结果为空，跳过`)
           return false
@@ -155,6 +156,11 @@ Page({
         
         return isValid
       })
+      
+      // 如果有效结果数量少于总题数，说明有题目未作答，记录警告
+      if (validResults.length < answerResults.length) {
+        console.warn(`[保存答题记录] 有 ${answerResults.length - validResults.length} 道题未作答，可能导致统计数据不准确`)
+      }
       
       console.log(`[保存答题记录] 准备保存答题记录:`, {
         原始数量: answerResults.length,

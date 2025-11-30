@@ -172,14 +172,14 @@ Page({
         this.stopProgressPolling()
         
         if (res.result && res.result.cards && res.result.cards.length > 0) {
-          const app = getApp()
-          app.globalData.qaCards = res.result.cards
-          app.globalData.currentCardIndex = 0
-          // 初始化answerResults数组，确保长度与qaCards一致
-          app.globalData.answerResults = new Array(res.result.cards.length).fill(null)
-          
-          // 显示完成提示
-          feedback.showSuccess(`成功生成 ${res.result.cards.length} 道题目！`)
+            const app = getApp()
+            app.globalData.qaCards = res.result.cards
+            app.globalData.currentCardIndex = 0
+            // 初始化answerResults数组为空数组，让它随答题进度增长
+            app.globalData.answerResults = []
+            
+            // 显示完成提示
+            feedback.showSuccess(`成功生成 ${res.result.cards.length} 道题目！`)
           
           // 延迟跳转，让用户看到完成提示
           setTimeout(() => {

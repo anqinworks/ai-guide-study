@@ -141,7 +141,7 @@ Page({
     // 计算答题耗时（毫秒）
     const elapsedTime = Date.now() - this.data.startTime;
     
-    // 保存答题结果 - 使用当前索引确保答案存储在正确位置
+    // 保存答题结果
     const answerResult = {
       topicId: currentCard.topicId,
       qacardId: currentCard.id,
@@ -157,14 +157,15 @@ Page({
       return
     }
     
-    app.globalData.answerResults[this.data.currentIndex] = answerResult
+    // 使用push()添加答案到数组末尾
+    app.globalData.answerResults.push(answerResult)
     
     console.log('[提交答案] 答题结果已保存:', {
       索引: this.data.currentIndex,
       题目ID: answerResult.qacardId,
       是否正确: answerResult.isCorrect,
       耗时: `${answerResult.elapsedTime}ms`,
-      总记录数: app.globalData.answerResults.filter(r => r !== null && r !== undefined).length
+      总记录数: app.globalData.answerResults.length
     })
 
     // 跳转到结果页面
