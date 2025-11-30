@@ -143,7 +143,7 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
     // 优化：分批保存到数据库（每批100条），提升性能
     const BATCH_SIZE = 100;
     const savedCards = [];
-    
+
     if (generatedCards.length > BATCH_SIZE) {
       // 大批量数据分批处理
       for (let i = 0; i < generatedCards.length; i += BATCH_SIZE) {
@@ -278,30 +278,30 @@ router.get('/progress/:taskId', authenticate, async (req, res) => {
 // 调用阿里通义千问API生成问答卡片 - 系统性增强版
 async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '', knowledgePoints = '', questionTypes = '', progressCallback) {
   console.log('调用阿里通义千问API生成问答卡片（增强版）:', { topic, difficulty, count, learningGoals, knowledgePoints, questionTypes });
-  
+
   if (progressCallback) {
     progressCallback(10, '正在解析输入参数...');
   }
-  
+
   // 1. 参数解析（使用缓存优化性能）
   const parsedParams = cacheParameterParse(learningGoals, knowledgePoints, questionTypes, difficulty);
   console.log('[参数解析] 解析结果:', JSON.stringify(parsedParams, null, 2));
-  
+
   if (progressCallback) {
     progressCallback(15, '正在建立参数映射规则...');
   }
-  
+
   // 2. 映射机制（使用缓存优化性能）
   const rules = cacheMappingRules(parsedParams);
   console.log('[映射机制] 生成规则:', JSON.stringify(rules, null, 2));
-  
+
   if (progressCallback) {
     progressCallback(20, '正在构建增强的生成提示词...');
   }
-  
+
   // 3. 生成增强的提示词
   const prompt = generateEnhancedPrompt(topic, difficulty, count, parsedParams, rules);
-  
+
   if (progressCallback) {
     progressCallback(25, '正在连接AI智能服务...');
   }
@@ -320,7 +320,7 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
       parameters: {
         temperature: 0.7,
         top_p: 0.95,
-        max_tokens: 2048
+        max_tokens: 4048
       }
     }, {
       headers: {
@@ -339,13 +339,14 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
 
     if (aiResponse.output && aiResponse.output.text) {
       // 提取JSON内容
-      const jsonMatch = aiResponse.output.text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      const jsonMatch = aiResponse.output.text.match(/\[\s*\{[\s\S]*?\}\s*\]|\[\s*\{[\s\S]*\}\]/g);
       if (jsonMatch) {
         let generatedCards;
         try {
           generatedCards = JSON.parse(jsonMatch[0]);
         } catch (parseError) {
           console.error('解析AI响应JSON失败:', parseError);
+          console.error('AI响应内容:', jsonMatch[0].toString());
           throw new Error('AI响应JSON格式错误');
         }
 
@@ -385,18 +386,18 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
         // 如果验证不通过，记录警告但继续使用生成的卡片
         if (!validationResult.valid) {
           console.warn('[内容验证] 验证未完全通过:', validationResult.summary);
-          
+
           // 如果综合得分太低（< 0.6），尝试重新生成
           if (validationResult.overallScore < 0.6 && count <= 10) {
             console.log('[内容验证] 综合得分过低，尝试重新生成...');
             if (progressCallback) {
               progressCallback(50, '内容质量不足，正在重新生成...');
             }
-            
+
             // 重新生成一次（最多重试1次）
             try {
               const retryPrompt = prompt + `\n\n【重要提醒】\n上一轮生成的内容与要求匹配度不足，请确保：\n1. 每道题目必须明确关联学习目标\n2. 必须覆盖所有指定的知识点\n3. 必须符合题型要求\n4. 难度必须匹配${difficulty}级别\n\n请重新生成，确保严格符合要求。`;
-              
+
               const retryResponse = await axios.post(aiConfig.apiUrl, {
                 model: "qwen-turbo",
                 input: { prompt: retryPrompt },

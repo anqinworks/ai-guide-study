@@ -56,7 +56,7 @@ module.exports = {
   ai: {
     // 阿里通义千问配置
     qwen: {
-      apiKey: process.env.QWEN_API_KEY || 'sk-ba8e92e5e33b4e0ca8e8c0bff83f4f95',
+      apiKey: process.env.QWEN_API_KEY || 'sk-cd5ba76c091e464788037b9681563434',
       apiUrl: process.env.QWEN_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
     },
 
