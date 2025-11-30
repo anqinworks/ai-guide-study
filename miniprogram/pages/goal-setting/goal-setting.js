@@ -388,16 +388,49 @@ Page({
     try {
       // 获取页面栈
       const pages = getCurrentPages()
-      // 查找"我的页面"
-      const userPage = pages.find(page => page.route === 'pages/user/user')
+      if (!pages || !Array.isArray(pages) || pages.length === 0) {
+        console.warn('无法获取页面栈')
+        return
+      }
+      
+      // 查找"我的页面" - 安全地访问route属性
+      let userPage = null
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i]
+        if (!page || typeof page !== 'object') continue
+        
+        try {
+          // 只使用page.route，避免访问内部变量__route__
+          // 使用hasOwnProperty检查属性是否存在
+          if (page.hasOwnProperty && page.hasOwnProperty('route')) {
+            const route = page.route
+            if (route === 'pages/user/user') {
+              userPage = page
+              break
+            }
+          } else if (page.route) {
+            // 如果hasOwnProperty不可用，直接访问但捕获错误
+            const route = page.route
+            if (route === 'pages/user/user') {
+              userPage = page
+              break
+            }
+          }
+        } catch (e) {
+          // 如果访问route属性出错，跳过这个页面
+          console.warn('访问页面route属性失败', e)
+          continue
+        }
+      }
+      
       if (userPage) {
         // 调用"我的页面"的刷新方法
         if (typeof userPage.loadLearningGoals === 'function') {
-          userPage.loadLearningGoals()
-        }
-        // 同时刷新学习统计数据，确保数据同步
-        if (typeof userPage.loadLearningStats === 'function') {
-          userPage.loadLearningStats()
+          try {
+            userPage.loadLearningGoals()
+          } catch (e) {
+            console.warn('调用loadLearningGoals失败', e)
+          }
         }
       }
     } catch (err) {

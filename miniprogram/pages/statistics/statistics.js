@@ -3,6 +3,13 @@ const request = require('../../utils/request')
 
 Page({
   data: {
+    // 今日学习统计
+    todayStats: {
+      todayMinutes: 0,
+      targetMinutes: 30,
+      progress: 0
+    },
+    
     // 核心统计数据
     totalQuestions: 0,
     accuracy: 0,
@@ -63,6 +70,71 @@ Page({
     this.loadStatisticsData(true)
   },
 
+  // 加载今日学习统计
+  async loadTodayStats() {
+    try {
+      const res = await request.get('/statistics/summary')
+      
+      if (res.success && res.data) {
+        const data = res.data
+        
+        // 只保留今日相关的数据
+        let todayMinutes = parseInt(data.todayMinutes) || 0
+        if (isNaN(todayMinutes) || todayMinutes < 0) {
+          todayMinutes = 0
+        }
+        
+        let targetMinutes = parseInt(data.targetMinutes) || 30
+        if (isNaN(targetMinutes) || targetMinutes <= 0) {
+          targetMinutes = 30
+        }
+        
+        // 计算今日进度
+        let progress = targetMinutes > 0 
+          ? Math.min(100, Math.max(0, Math.round((todayMinutes / targetMinutes) * 100)))
+          : 0
+        
+        if (isNaN(progress) || progress < 0 || progress > 100) {
+          progress = Math.max(0, Math.min(100, progress || 0))
+        }
+        
+        // 计算剩余时间（距离目标还差多少分钟）
+        let remainingMinutes = Math.max(0, targetMinutes - todayMinutes)
+        
+        this.setData({
+          todayStats: {
+            todayMinutes: todayMinutes,
+            targetMinutes: targetMinutes,
+            progress: progress,
+            remainingMinutes: remainingMinutes
+          }
+        })
+        
+        console.log('[今日统计] 数据加载成功:', this.data.todayStats)
+      } else {
+        // 使用默认值
+        this.setData({
+          todayStats: {
+            todayMinutes: 0,
+            targetMinutes: 30,
+            progress: 0,
+            remainingMinutes: 30
+          }
+        })
+      }
+    } catch (err) {
+      console.error('加载今日学习统计失败', err)
+      // 出错时使用默认值
+      this.setData({
+        todayStats: {
+          todayMinutes: 0,
+          targetMinutes: 30,
+          progress: 0
+        }
+      })
+    }
+  },
+
   // 加载统计数据
   async loadStatisticsData(forceRefresh = false) {
     this.data.loadStartTime = Date.now()
@@ -75,6 +147,9 @@ Page({
         dataValidationErrors: [],
         chartsReady: false
       })
+      
+      // 加载今日学习统计
+      await this.loadTodayStats()
       
       // 检查缓存
       if (!forceRefresh) {
@@ -126,6 +201,9 @@ Page({
       
       // 准备图表数据
       this.prepareChartData()
+      
+      // 更新今日统计（确保下拉刷新时也更新）
+      await this.loadTodayStats()
       
       // 更新数据
       const loadTime = Date.now() - this.data.loadStartTime

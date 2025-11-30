@@ -18,75 +18,30 @@
     <text class="user-id">ID: {{userInfo.id || ''}}</text>
   </view>
   
-  <!-- 学习统计卡片 -->
-  <view class="learning-stats-section" wx:if="{{isLoggedIn}}">
-    <view class="learning-stats-card">
-      <view class="stats-header">
-        <text class="stats-title">📊 学习统计</text>
-        <text class="stats-subtitle">今日学习时长</text>
-      </view>
-      
-      <view class="stats-content">
-        <view class="time-display">
-          <text class="time-value">{{learningStats.todayMinutes || 0}}</text>
-          <text class="time-unit">分钟</text>
-        </view>
-        
-        <view class="stats-grid">
-          <view class="stat-item">
-            <text class="stat-icon">📚</text>
-            <text class="stat-value">{{learningStats.totalMinutes || 0}}</text>
-            <text class="stat-label">总学习时长</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-icon">🎯</text>
-            <text class="stat-value">{{learningStats.targetMinutes || 30}}</text>
-            <text class="stat-label">每日目标</text>
-          </view>
-          <view class="stat-item">
-            <text class="stat-icon">🔥</text>
-            <text class="stat-value">{{learningStats.continuousDays || 0}}</text>
-            <text class="stat-label">连续学习</text>
-          </view>
-        </view>
-        
-        <view class="progress-section">
-          <view class="progress-info">
-            <text class="progress-label">今日进度</text>
-            <text class="progress-text">{{learningStats.progress || 0}}%</text>
-          </view>
-          <view class="progress-bar-wrapper">
-            <view class="progress-bar" style="width: {{learningStats.progress || 0}}%"></view>
-          </view>
-        </view>
-      </view>
+  <!-- 学习目标卡片 -->
+  <view class="learning-goal-card" wx:if="{{isLoggedIn}}">
+    <view class="goal-header">
+      <text class="goal-title">🎯 学习目标</text>
+      <text class="goal-edit-btn" bindtap="editGoal">设置</text>
     </view>
     
-    <!-- 学习目标卡片 -->
-    <view class="learning-goal-card">
-      <view class="goal-header">
-        <text class="goal-title">🎯 学习目标</text>
-        <text class="goal-edit-btn" bindtap="editGoal">设置</text>
+    <view class="goal-content">
+      <view class="goal-item" wx:for="{{learningGoals}}" wx:key="id">
+        <view class="goal-info">
+          <text class="goal-name">{{item.name}}</text>
+          <text class="goal-desc" wx:if="{{item.description}}">{{item.description}}</text>
+        </view>
+        <view class="goal-progress">
+          <view class="goal-progress-bar">
+            <view class="goal-progress-fill" style="width: {{item.progress}}%"></view>
+          </view>
+          <text class="goal-progress-text">{{item.progress}}%</text>
+        </view>
       </view>
       
-      <view class="goal-content">
-        <view class="goal-item" wx:for="{{learningGoals}}" wx:key="id">
-          <view class="goal-info">
-            <text class="goal-name">{{item.name}}</text>
-            <text class="goal-desc" wx:if="{{item.description}}">{{item.description}}</text>
-          </view>
-          <view class="goal-progress">
-            <view class="goal-progress-bar">
-              <view class="goal-progress-fill" style="width: {{item.progress}}%"></view>
-            </view>
-            <text class="goal-progress-text">{{item.progress}}%</text>
-          </view>
-        </view>
-        
-        <view class="no-goal" wx:if="{{learningGoals.length === 0}}">
-          <text class="no-goal-text">还没有设置学习目标</text>
-          <button class="set-goal-btn" bindtap="editGoal">设置学习目标</button>
-        </view>
+      <view class="no-goal" wx:if="{{learningGoals.length === 0}}">
+        <text class="no-goal-text">还没有设置学习目标</text>
+        <button class="set-goal-btn" bindtap="editGoal">设置学习目标</button>
       </view>
     </view>
   </view>

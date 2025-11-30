@@ -20,6 +20,56 @@
   
   <!-- 数据展示 -->
   <view class="data-container" wx:if="{{!loading && !error}}">
+    <!-- 今日学习统计 -->
+    <view class="today-stats-section">
+      <view class="today-stats-card">
+        <view class="today-stats-header">
+          <text class="today-stats-title">📊 今日学习</text>
+          <text class="today-stats-subtitle">实时更新</text>
+        </view>
+        
+        <view class="today-stats-content">
+          <!-- 主要指标：今日学习时长 -->
+          <view class="today-time-display">
+            <text class="today-time-value">{{todayStats.todayMinutes || 0}}</text>
+            <text class="today-time-unit">分钟</text>
+          </view>
+          
+          <!-- 次要指标：目标、进度、剩余时间 -->
+          <view class="today-stats-grid">
+            <view class="today-stat-item">
+              <text class="today-stat-icon">🎯</text>
+              <text class="today-stat-value">{{todayStats.targetMinutes || 30}}</text>
+              <text class="today-stat-unit">分钟</text>
+              <text class="today-stat-label">每日目标</text>
+            </view>
+            <view class="today-stat-item">
+              <text class="today-stat-icon">📈</text>
+              <text class="today-stat-value">{{todayStats.progress || 0}}%</text>
+              <text class="today-stat-label">完成进度</text>
+            </view>
+            <view class="today-stat-item">
+              <text class="today-stat-icon">⏰</text>
+              <text class="today-stat-value">{{todayStats.remainingMinutes || 0}}</text>
+              <text class="today-stat-unit">分钟</text>
+              <text class="today-stat-label">剩余时间</text>
+            </view>
+          </view>
+          
+          <!-- 进度条 -->
+          <view class="today-progress-section">
+            <view class="today-progress-info">
+              <text class="today-progress-label">今日进度</text>
+              <text class="today-progress-text">{{todayStats.progress || 0}}%</text>
+            </view>
+            <view class="today-progress-bar-wrapper">
+              <view class="today-progress-bar" style="width: {{todayStats.progress || 0}}%"></view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
     <!-- 核心统计指标 -->
     <view class="stats-overview">
       <view class="stat-card" style="animation-delay: 0.1s">
