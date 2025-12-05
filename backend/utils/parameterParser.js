@@ -150,100 +150,12 @@ function parseKnowledgePoints(knowledgePoints) {
 }
 
 /**
- * 解析题型要求
- * 提取题型类型、格式特征、难度特征
- */
-function parseQuestionTypes(questionTypes) {
-  if (!questionTypes || !questionTypes.trim()) {
-    return {
-      hasTypes: false,
-      types: [],
-      formats: [],
-      difficultyFeatures: []
-    };
-  }
-
-  const text = questionTypes.trim();
-  const result = {
-    hasTypes: true,
-    types: [],              // 题型类型
-    formats: [],            // 格式特征
-    difficultyFeatures: [] // 难度特征
-  };
-
-  // 常见题型关键词
-  const typeKeywords = {
-    '代码阅读': ['代码阅读', '代码理解', '代码分析', '阅读代码'],
-    '概念理解': ['概念理解', '概念题', '理论题', '概念'],
-    '实际应用': ['实际应用', '应用题', '实践题', '应用场景'],
-    '计算题': ['计算', '计算题', '数学计算', '数值计算'],
-    '判断题': ['判断', '判断题', '对错题'],
-    '填空题': ['填空', '填空题', '补全'],
-    '代码编写': ['代码编写', '编程题', '实现题', '编写代码']
-  };
-
-  // 格式特征关键词
-  const formatKeywords = [
-    '选择题', '多选题', '单选题', '代码题', '图表题',
-    '案例分析', '场景题', '综合题', '组合题'
-  ];
-
-  // 难度特征关键词
-  const difficultyKeywords = {
-    '基础': ['基础', '简单', '入门', '初级'],
-    '进阶': ['进阶', '中等', '中级', '提高'],
-    '高级': ['高级', '困难', '复杂', '深入', '综合']
-  };
-
-  // 按句号、换行分割
-  const sentences = text.split(/[。\n\r；;]/).filter(s => s.trim());
-
-  sentences.forEach(sentence => {
-    const trimmed = sentence.trim();
-    if (!trimmed) return;
-
-    // 检测题型
-    for (const [type, keywords] of Object.entries(typeKeywords)) {
-      if (keywords.some(keyword => trimmed.includes(keyword))) {
-        if (!result.types.includes(type)) {
-          result.types.push(type);
-        }
-      }
-    }
-
-    // 检测格式特征
-    formatKeywords.forEach(keyword => {
-      if (trimmed.includes(keyword)) {
-        result.formats.push(keyword);
-      }
-    });
-
-    // 检测难度特征
-    for (const [level, keywords] of Object.entries(difficultyKeywords)) {
-      if (keywords.some(keyword => trimmed.includes(keyword))) {
-        if (!result.difficultyFeatures.includes(level)) {
-          result.difficultyFeatures.push(level);
-        }
-      }
-    }
-  });
-
-  // 去重
-  result.types = [...new Set(result.types)];
-  result.formats = [...new Set(result.formats)];
-  result.difficultyFeatures = [...new Set(result.difficultyFeatures)];
-
-  return result;
-}
-
-/**
  * 综合解析所有参数
  */
-function parseAllParameters(learningGoals, knowledgePoints, questionTypes, difficulty) {
+function parseAllParameters(learningGoals, knowledgePoints, difficulty) {
   const parsed = {
     learningGoals: parseLearningGoals(learningGoals),
     knowledgePoints: parseKnowledgePoints(knowledgePoints),
-    questionTypes: parseQuestionTypes(questionTypes),
     difficulty: difficulty || '中等'
   };
 
@@ -251,10 +163,8 @@ function parseAllParameters(learningGoals, knowledgePoints, questionTypes, diffi
   parsed.completeness = {
     hasLearningGoals: parsed.learningGoals.hasGoals,
     hasKnowledgePoints: parsed.knowledgePoints.hasPoints,
-    hasQuestionTypes: parsed.questionTypes.hasTypes,
     score: (parsed.learningGoals.hasGoals ? 1 : 0) +
-           (parsed.knowledgePoints.hasPoints ? 1 : 0) +
-           (parsed.questionTypes.hasTypes ? 1 : 0)
+           (parsed.knowledgePoints.hasPoints ? 1 : 0)
   };
 
   return parsed;
@@ -263,7 +173,6 @@ function parseAllParameters(learningGoals, knowledgePoints, questionTypes, diffi
 module.exports = {
   parseLearningGoals,
   parseKnowledgePoints,
-  parseQuestionTypes,
   parseAllParameters
 };
 

@@ -3,6 +3,8 @@
  * 在小程序中，LaTeX公式需要转换为图片或使用特殊方式渲染
  */
 
+const config = require('./config')
+
 /**
  * 将LaTeX公式转换为图片URL（需要服务端支持）
  * @param {string} formula - LaTeX公式
@@ -11,11 +13,8 @@
  */
 async function renderLatexToImage(formula, isBlock = false) {
   try {
-    // 方案1：使用MathJax服务端API
-    // const apiUrl = `https://api.mathml.cloud/api/v1/mathml?latex=${encodeURIComponent(formula)}`;
-    
-    // 方案2：使用QuickLaTeX API
-    const apiUrl = `https://quicklatex.com/latex3.f?formula=${encodeURIComponent(formula)}&fsize=20px&fcolor=000000&mode=0&out=1&remhost=quicklatex.com`;
+    // 使用配置的LaTeX渲染服务
+    const apiUrl = config.getLatexRenderUrl(formula, isBlock);
     
     // 注意：小程序中需要配置合法域名
     // 或者使用自己的服务端API来渲染LaTeX

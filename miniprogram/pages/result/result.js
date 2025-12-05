@@ -194,13 +194,14 @@ Page({
       
       // 跳转到学习报告页面
       feedback.hideLoading()
+      const config = require('../../utils/config')
       feedback.showSuccess('答题记录已保存')
       
       setTimeout(() => {
         wx.navigateTo({
           url: '/pages/report/report'
         })
-      }, 500)
+      }, config.ui.navigationDelay)
     } catch (err) {
       feedback.hideLoading()
       console.error('[保存答题记录] 保存失败:', {

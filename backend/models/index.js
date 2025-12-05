@@ -1,11 +1,15 @@
 const Sequelize = require('sequelize');
-const config = require('../config/database.js');
+const config = require('../config/config');
 
-const sequelize = new Sequelize(config.development.database, config.development.username, config.development.password, {
-  host: config.development.host,
-  port: config.development.port,
-  dialect: config.development.dialect,
-  logging: config.development.logging
+// 根据环境获取数据库配置
+const env = config.server.env || 'development';
+const dbConfig = config.database[env];
+
+const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+  host: dbConfig.host,
+  port: dbConfig.port,
+  dialect: dbConfig.dialect,
+  logging: dbConfig.logging
 });
 
 const db = {};

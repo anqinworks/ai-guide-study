@@ -61,12 +61,13 @@ Page({
     } else {
       console.error('索引超出范围:', currentIndex, '卡片数量:', qaCards.length)
       // 如果索引无效，跳转回首页或提示错误
+      const config = require('../../utils/config')
       feedback.showError('题目加载失败，请重新开始')
       setTimeout(() => {
         wx.navigateBack({
           delta: 999 // 返回首页
         })
-      }, 1500)
+      }, config.ui.errorMessageDelay)
     }
   },
 

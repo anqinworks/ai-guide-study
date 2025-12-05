@@ -505,8 +505,34 @@
   display: block;
   font-size: 26rpx;
   color: #666;
-  margin-bottom: 40rpx;
+  margin-bottom: 20rpx;
   min-height: 40rpx;
+}
+
+/* 等待时间显示 */
+.wait-time-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30rpx;
+  padding: 16rpx 24rpx;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border-radius: 20rpx;
+  border: 2rpx solid #e0e6ed;
+}
+
+.wait-time-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-right: 12rpx;
+}
+
+.wait-time-value {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #667eea;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2rpx;
 }
 
 /* 进度条 */

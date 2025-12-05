@@ -3,15 +3,17 @@
  * 在生产环境中，应该使用Redis等持久化存储
  */
 
+const config = require('../config/config');
+
 class TaskManager {
   constructor() {
     // 任务存储：taskId -> { status, progress, message, result, error, createdAt }
     this.tasks = new Map();
     
-    // 定期清理已完成的任务（5分钟后）
+    // 定期清理已完成的任务（使用配置的清理间隔）
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
-    }, 5 * 60 * 1000);
+    }, config.task.cleanupInterval);
   }
 
   /**
@@ -105,11 +107,11 @@ class TaskManager {
   }
 
   /**
-   * 清理已完成或失败的任务（超过5分钟）
+   * 清理已完成或失败的任务（使用配置的保留时间）
    */
   cleanup() {
     const now = Date.now();
-    const maxAge = 5 * 60 * 1000; // 5分钟
+    const maxAge = config.task.retentionTime;
     
     for (const [taskId, task] of this.tasks.entries()) {
       const age = now - task.createdAt.getTime();

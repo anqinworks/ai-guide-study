@@ -1,8 +1,10 @@
 // app.js
+const config = require('./utils/config')
+
 App({
   globalData: {
     userInfo: null,
-    token: wx.getStorageSync('token') || '',
+    token: wx.getStorageSync(config.auth.tokenKey) || '',
     currentTopic: null,
     qaCards: [],
     currentCardIndex: 0,
@@ -17,7 +19,7 @@ App({
   
   // 检查登录状态
   checkLoginStatus() {
-    const token = wx.getStorageSync('token')
+    const token = wx.getStorageSync(config.auth.tokenKey)
     if (token) {
       this.globalData.token = token
       // 验证token是否有效
@@ -28,8 +30,9 @@ App({
   // 验证token有效性
   validateToken() {
     wx.request({
-      url: 'http://192.168.1.2:3000/api/user/validate',
+      url: config.getApiUrl(config.auth.validateEndpoint),
       method: 'GET',
+      timeout: config.api.timeout,
       header: {
         'Authorization': `Bearer ${this.globalData.token}`
       },
@@ -53,8 +56,8 @@ App({
   clearLoginInfo() {
     this.globalData.token = ''
     this.globalData.userInfo = null
-    wx.removeStorageSync('token')
-    wx.removeStorageSync('userInfo')
+    wx.removeStorageSync(config.auth.tokenKey)
+    wx.removeStorageSync(config.auth.userInfoKey)
   },
   
   // 微信授权登录流程
@@ -70,8 +73,9 @@ App({
               success: userProfileRes => {
                 // 3. 发送登录凭证和用户信息到服务器
                 wx.request({
-                  url: 'http://192.168.1.2:3000/api/user/wx-login',
+                  url: config.getApiUrl(config.auth.wxLoginEndpoint),
                   method: 'POST',
+                  timeout: config.api.timeout,
                   data: {
                     code: loginRes.code,
                     userInfo: userProfileRes.userInfo
@@ -81,8 +85,8 @@ App({
                       // 4. 保存登录状态
                       this.globalData.token = serverRes.data.token
                       this.globalData.userInfo = serverRes.data.user
-                      wx.setStorageSync('token', serverRes.data.token)
-                      wx.setStorageSync('userInfo', serverRes.data.user)
+                      wx.setStorageSync(config.auth.tokenKey, serverRes.data.token)
+                      wx.setStorageSync(config.auth.userInfoKey, serverRes.data.user)
                       resolve(serverRes.data)
                     } else {
                       reject(new Error('登录失败：' + (serverRes.data.message || '服务器错误')))

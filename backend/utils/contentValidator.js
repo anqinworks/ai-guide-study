@@ -118,68 +118,76 @@ function validateDifficultyMatch(cards, difficulty) {
 }
 
 /**
- * 验证题型符合度
+ * 验证题目类型合规性
  */
-function validateQuestionTypeCompliance(cards, questionTypes) {
-  if (!questionTypes.hasTypes) {
-    return { valid: true, score: 1.0, details: [] };
-  }
-
-  const typeKeywords = {
-    '代码阅读': ['代码', 'function', '代码片段', '程序', '代码执行'],
-    '概念理解': ['概念', '定义', '原理', '机制', '是什么', '什么是'],
-    '实际应用': ['应用', '场景', '实际', '案例', '使用', '如何'],
-    '计算题': ['计算', '等于', '结果', '值', '多少', '求出'],
-    '代码编写': ['编写', '实现', '代码', '函数', '程序']
-  };
-
-  const requiredTypes = questionTypes.types;
-  const typeDistribution = {};
-  const typeDetails = [];
-
-  requiredTypes.forEach(type => {
-    typeDistribution[type] = 0;
-  });
+function validateQuestionTypeCompliance(cards) {
+  // 验证每个卡片是否有正确的题目类型结构
+  let validCount = 0;
+  const complianceDetails = [];
 
   cards.forEach((card, index) => {
-    const questionText = (card.question || '').toLowerCase();
-    const explanationText = (card.explanation || '').toLowerCase();
-    const combinedText = questionText + ' ' + explanationText;
+    // 检查基本结构
+    const hasQuestion = card.question && card.question.trim().length > 0;
+    const hasOptions = card.options && Array.isArray(card.options) && card.options.length >= 2;
+    const hasCorrectAnswer = card.correctAnswer !== undefined && card.correctAnswer !== null;
+    const hasExplanation = card.explanation && card.explanation.trim().length > 0;
 
-    const cardTypes = [];
-    requiredTypes.forEach(type => {
-      const keywords = typeKeywords[type] || [];
-      if (keywords.some(keyword => combinedText.includes(keyword.toLowerCase()))) {
-        typeDistribution[type]++;
-        cardTypes.push(type);
+    // 检查选项格式
+    const optionsValid = hasOptions && card.options.every(opt => 
+      typeof opt === 'string' && opt.trim().length > 0
+    );
+
+    // 检查正确答案是否在选项中
+    let answerValid = false;
+    if (hasCorrectAnswer && hasOptions) {
+      const correctAnswerStr = String(card.correctAnswer).trim();
+      // 检查是否是选项索引（0, 1, 2...）或选项内容
+      if (!isNaN(correctAnswerStr)) {
+        const index = parseInt(correctAnswerStr);
+        answerValid = index >= 0 && index < card.options.length;
+      } else {
+        answerValid = card.options.some(opt => 
+          opt.trim() === correctAnswerStr || opt.includes(correctAnswerStr)
+        );
       }
-    });
+    }
 
-    typeDetails.push({
+    const isCompliant = hasQuestion && hasOptions && hasCorrectAnswer && 
+                       hasExplanation && optionsValid && answerValid;
+
+    if (isCompliant) {
+      validCount++;
+    }
+
+    complianceDetails.push({
       cardIndex: index,
-      types: cardTypes
+      compliant: isCompliant,
+      hasQuestion,
+      hasOptions,
+      hasCorrectAnswer,
+      hasExplanation,
+      optionsValid,
+      answerValid,
+      issues: !isCompliant ? [
+        !hasQuestion && '缺少题目',
+        !hasOptions && '缺少选项',
+        !hasCorrectAnswer && '缺少正确答案',
+        !hasExplanation && '缺少解析',
+        !optionsValid && '选项格式错误',
+        !answerValid && '正确答案不在选项中'
+      ].filter(Boolean) : []
     });
   });
 
-  // 检查每种题型是否至少有一道题
-  const allTypesCovered = requiredTypes.every(type =>
-    typeDistribution[type] > 0
-  );
-
-  const avgDistribution = requiredTypes.length > 0
-    ? requiredTypes.reduce((sum, type) => sum + typeDistribution[type], 0) / requiredTypes.length
-    : 0;
-
-  const complianceScore = allTypesCovered ? 1.0 : 0.5;
+  const complianceRate = cards.length > 0 ? validCount / cards.length : 0;
 
   return {
-    valid: allTypesCovered,
-    score: complianceScore,
-    distribution: typeDistribution,
-    details: typeDetails,
-    message: allTypesCovered
-      ? `题型符合度：100%，已覆盖所有要求的题型`
-      : `题型符合度不足，缺失题型：${requiredTypes.filter(t => typeDistribution[t] === 0).join('、')}`
+    valid: complianceRate >= 0.9, // 至少90%合规性
+    score: complianceRate,
+    details: complianceDetails,
+    message: complianceRate >= 0.9
+      ? `题目类型合规性：${(complianceRate * 100).toFixed(1)}%`
+      : `题目类型合规性不足：${(complianceRate * 100).toFixed(1)}%`
   };
 }
 
@@ -261,7 +269,7 @@ function validateAll(cards, parsedParams) {
   const validations = {
     knowledgeCoverage: validateKnowledgeCoverage(cards, parsedParams.knowledgePoints),
     difficultyMatch: validateDifficultyMatch(cards, parsedParams.difficulty),
-    questionTypeCompliance: validateQuestionTypeCompliance(cards, parsedParams.questionTypes),
+    questionTypeCompliance: validateQuestionTypeCompliance(cards),
     goalRelevance: validateGoalRelevance(cards, parsedParams.learningGoals)
   };
 

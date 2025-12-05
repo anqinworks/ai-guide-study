@@ -10,6 +10,10 @@ const { parseAllParameters } = require('../utils/parameterParser');
 const { mapParametersToRules, generateEnhancedPrompt } = require('../utils/generationMapper');
 const { validateAll } = require('../utils/contentValidator');
 const { cacheParameterParse, cacheMappingRules } = require('../utils/performanceCache');
+const { extractAndParseJson, parseJsonSafely } = require('../utils/jsonParser');
+const { requestWithRetry, healthCheck } = require('../utils/apiClient');
+const apiMonitor = require('../utils/apiMonitor');
+const { logAiConfig, logAiRequest, logAiResponse } = require('../utils/logger');
 
 // 生成问答卡片 - 使用认证中间件确保数据安全，支持异步任务和进度跟踪
 router.post('/generate', authenticate, async (req, res) => {
@@ -21,8 +25,8 @@ router.post('/generate', authenticate, async (req, res) => {
       count,
       subject = 'default',
       learningGoals = '',      // 学习目标
-      knowledgePoints = '',     // 知识点范围
-      questionTypes = ''        // 题型要求
+      knowledgePoints = '',    // 知识点范围
+      waitSeconds = null       // 用户等待时间（秒），如果为null则使用配置的默认值
     } = req.body;
 
     // 验证参数
@@ -32,8 +36,10 @@ router.post('/generate', authenticate, async (req, res) => {
 
     // 验证count参数范围，防止恶意请求
     const cardCount = parseInt(count);
-    if (isNaN(cardCount) || cardCount < 1 || cardCount > 50) {
-      return res.status(400).json({ message: '卡片数量必须在1-50之间' });
+    if (isNaN(cardCount) || cardCount < config.question.minCount || cardCount > config.question.maxCount) {
+      return res.status(400).json({ 
+        message: `卡片数量必须在${config.question.minCount}-${config.question.maxCount}之间` 
+      });
     }
 
     // 生成任务ID
@@ -53,8 +59,20 @@ router.post('/generate', authenticate, async (req, res) => {
       message: '生成任务已创建，请使用taskId查询进度'
     });
 
+    // 计算等待时间（秒）
+    let waitTimeSeconds = 0;
+    if (config.question.waitTime.enabled) {
+      // 如果请求中指定了等待时间，使用请求中的值；否则使用配置的默认值
+      const requestedWaitTime = waitSeconds !== null ? parseInt(waitSeconds) : config.question.waitTime.defaultSeconds;
+      // 限制在允许的范围内
+      waitTimeSeconds = Math.max(
+        config.question.waitTime.minSeconds,
+        Math.min(config.question.waitTime.maxSeconds, requestedWaitTime || 0)
+      );
+    }
+
     // 异步执行生成任务
-    generateCardsAsync(taskId, userId, topic, difficulty, cardCount, subject, learningGoals, knowledgePoints, questionTypes)
+    generateCardsAsync(taskId, userId, topic, difficulty, cardCount, subject, learningGoals, knowledgePoints, waitTimeSeconds)
       .catch(error => {
         console.error(`[生成任务] 任务 ${taskId} 执行失败:`, error);
         taskManager.failTask(taskId, error.message || '生成失败');
@@ -66,10 +84,35 @@ router.post('/generate', authenticate, async (req, res) => {
   }
 });
 
-// 异步生成卡片任务 - 增强版，支持学习目标、知识点范围、题型要求
-async function generateCardsAsync(taskId, userId, topic, difficulty, count, subject, learningGoals = '', knowledgePoints = '', questionTypes = '') {
+// 异步生成卡片任务 - 增强版，支持学习目标、知识点范围、用户等待时间
+async function generateCardsAsync(taskId, userId, topic, difficulty, count, subject, learningGoals = '', knowledgePoints = '', waitSeconds = 0) {
   try {
-    taskManager.updateProgress(taskId, 5, '正在初始化生成任务...');
+    // 如果配置了等待时间，在开始生成前等待
+    if (waitSeconds > 0) {
+      const waitTimeMs = waitSeconds * 1000;
+      taskManager.updateProgress(taskId, 5, `正在准备生成任务，请稍候 ${waitSeconds} 秒...`);
+      console.log(`[生成任务] 任务 ${taskId} 等待 ${waitSeconds} 秒后开始生成`);
+      
+      // 分段更新等待进度，提升用户体验
+      const progressInterval = Math.max(1000, Math.floor(waitTimeMs / 10)); // 每10%更新一次进度，最少1秒
+      const startTime = Date.now();
+      
+      while (Date.now() - startTime < waitTimeMs) {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.ceil((waitTimeMs - elapsed) / 1000);
+        const progress = 5 + Math.floor((elapsed / waitTimeMs) * 5); // 5%到10%的进度范围
+        
+        if (remaining > 0) {
+          taskManager.updateProgress(taskId, progress, `正在准备生成任务，请稍候 ${remaining} 秒...`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, progressInterval));
+      }
+      
+      taskManager.updateProgress(taskId, 10, '等待完成，开始初始化生成任务...');
+    } else {
+      taskManager.updateProgress(taskId, 5, '正在初始化生成任务...');
+    }
 
     // 保存主题
     taskManager.updateProgress(taskId, 10, '正在保存学习主题...');
@@ -96,11 +139,12 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
       switch (aiModel) {
         case 'qwen':
           // 调用阿里通义千问API（系统性增强版）
-          let aiCards = await callQwenAPI(topic, difficulty, count, aiConfig, learningGoals, knowledgePoints, questionTypes, (progress, message) => {
-            // AI生成进度回调：30% - 90%（包含参数解析、映射、验证）
-            const overallProgress = 30 + Math.floor(progress * 0.6);
+          let aiCards = await callQwenAPI(topic, difficulty, count, aiConfig, learningGoals, knowledgePoints, (progress, message) => {
+            // AI生成进度回调：使用配置的进度范围
+            const progressRange = config.task.progress.aiEnd - config.task.progress.aiStart;
+            const overallProgress = config.task.progress.aiStart + Math.floor(progress * (progressRange / 100));
             taskManager.updateProgress(taskId, overallProgress, message);
-          });
+          }, userId);
 
           // 检查AI返回的卡片数量
           if (aiCards && aiCards.length > 0) {
@@ -112,36 +156,31 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
               topicId: savedTopic.id
             }));
 
-            // 如果AI生成的卡片数量不足，使用模拟数据补充
+            // 如果AI生成的卡片数量不足，记录警告但继续使用已生成的卡片
             if (generatedCards.length < count) {
-              console.warn(`AI只生成了${generatedCards.length}张卡片，需要补充${count - generatedCards.length}张`);
-              taskManager.updateProgress(taskId, 75, `正在补充生成 ${count - generatedCards.length} 道题目...`);
-              const mockCards = generateMockCards(topic, difficulty, count - generatedCards.length, savedTopic.id);
-              generatedCards = [...generatedCards, ...mockCards];
+              console.warn(`AI只生成了${generatedCards.length}张卡片，请求数量为${count}张`);
+              taskManager.updateProgress(taskId, 75, `已生成 ${generatedCards.length} 道题目（请求 ${count} 道）`);
             }
           } else {
-            // AI返回空数组时，使用模拟数据
-            console.warn('AI返回空卡片，使用模拟数据');
-            taskManager.updateProgress(taskId, 50, '正在生成题目内容...');
-            generatedCards = generateMockCards(topic, difficulty, count, savedTopic.id);
+            // AI返回空数组时，抛出错误
+            throw new Error('AI返回空卡片，无法生成题目');
           }
           break;
         default:
-          // 默认使用模拟数据
-          taskManager.updateProgress(taskId, 50, '正在生成题目内容...');
-          generatedCards = generateMockCards(topic, difficulty, count, savedTopic.id);
+          // 不支持的AI模型，抛出错误
+          throw new Error(`不支持的AI模型: ${aiModel}`);
       }
     } catch (aiError) {
       console.error('AI API call error:', aiError);
-      taskManager.updateProgress(taskId, 50, '正在使用备用方案生成题目...');
-      // AI接口调用失败时，使用模拟数据确保系统可用性
-      generatedCards = generateMockCards(topic, difficulty, count, savedTopic.id);
+      taskManager.updateProgress(taskId, 50, 'AI接口调用失败，任务终止');
+      // AI接口调用失败时，抛出错误，不再使用模拟数据
+      throw new Error(`AI接口调用失败: ${aiError.message}`);
     }
 
     taskManager.updateProgress(taskId, 80, '正在批量保存题目到学习库...');
 
-    // 优化：分批保存到数据库（每批100条），提升性能
-    const BATCH_SIZE = 100;
+    // 优化：分批保存到数据库，提升性能
+    const BATCH_SIZE = config.question.batchSize;
     const savedCards = [];
 
     if (generatedCards.length > BATCH_SIZE) {
@@ -243,6 +282,22 @@ async function generateCardsAsync(taskId, userId, topic, difficulty, count, subj
   }
 }
 
+// API监控端点 - 获取API调用统计信息
+router.get('/monitor/stats', authenticate, async (req, res) => {
+  try {
+    const stats = apiMonitor.getStats();
+    const health = apiMonitor.getHealthStatus();
+    res.json({
+      stats,
+      health,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('获取API监控统计失败:', error);
+    res.status(500).json({ message: '获取监控统计失败' });
+  }
+});
+
 // 查询生成任务进度
 router.get('/progress/:taskId', authenticate, async (req, res) => {
   try {
@@ -270,21 +325,29 @@ router.get('/progress/:taskId', authenticate, async (req, res) => {
       error: task.error
     });
   } catch (error) {
-    console.error('Query task progress error:', error);
+    // 静默记录错误，不包含任何用户信息
+    console.error('[进度查询] 查询失败:', {
+      path: '/progress/:taskId',
+      taskId: req.params.taskId,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
     res.status(500).json({ message: '查询任务进度失败' });
   }
 });
 
 // 调用阿里通义千问API生成问答卡片 - 系统性增强版
-async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '', knowledgePoints = '', questionTypes = '', progressCallback) {
-  console.log('调用阿里通义千问API生成问答卡片（增强版）:', { topic, difficulty, count, learningGoals, knowledgePoints, questionTypes });
+async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '', knowledgePoints = '', progressCallback, userId = null) {
+  // 生成请求ID用于追踪
+  const requestId = `ai_req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const requestStartTime = Date.now();
 
   if (progressCallback) {
     progressCallback(10, '正在解析输入参数...');
   }
 
   // 1. 参数解析（使用缓存优化性能）
-  const parsedParams = cacheParameterParse(learningGoals, knowledgePoints, questionTypes, difficulty);
+  const parsedParams = cacheParameterParse(learningGoals, knowledgePoints, difficulty);
   console.log('[参数解析] 解析结果:', JSON.stringify(parsedParams, null, 2));
 
   if (progressCallback) {
@@ -311,44 +374,175 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
       progressCallback(30, '正在向AI发送增强的生成请求...');
     }
 
-    // 调用阿里通义千问API
-    const response = await axios.post(aiConfig.apiUrl, {
-      model: "qwen-turbo",
-      input: {
-        prompt: prompt
+    // 根据题目数量动态调整超时时间
+    const requestTimeout = config.getAiTimeout(count);
+
+    // 准备请求配置
+    const requestParams = {
+      ...config.ai.qwen.defaultParams
+    };
+    
+    const requestConfig = {
+      method: 'POST',
+      url: aiConfig.apiUrl,
+      data: {
+        model: aiConfig.model || config.ai.qwen.model,
+        input: {
+          prompt: prompt
+        },
+        parameters: requestParams
       },
-      parameters: {
-        temperature: 0.7,
-        top_p: 0.95,
-        max_tokens: 4048
-      }
-    }, {
       headers: {
         'Authorization': `Bearer ${aiConfig.apiKey}`,
         'Content-Type': 'application/json'
       },
-      timeout: 30000 // 30秒超时，提升响应速度
+      timeout: requestTimeout
+    };
+
+    const retryConfig = {
+      maxRetries: config.api.retry.ai.maxRetries,
+      baseDelay: config.api.retry.ai.baseDelay,
+      maxDelay: config.api.retry.ai.maxDelay,
+      timeout: requestTimeout,
+      progressCallback: progressCallback,
+      onRetry: (attempt, error, delay) => {
+        console.log(`[API重试] 第${attempt}次重试，延迟${delay}ms，错误: ${error.message}`);
+      }
+    };
+
+    // 记录AI配置信息
+    logAiConfig(aiConfig, {
+      ...requestConfig,
+      ...retryConfig
+    }, requestId);
+
+    // 记录AI请求详细信息
+    logAiRequest({
+      requestId,
+      userId: userId || 'unknown',
+      topic,
+      difficulty,
+      count,
+      subject: 'default',
+      learningGoals,
+      knowledgePoints,
+      prompt,
+      requestParams,
+      timestamp: new Date().toISOString()
+    });
+
+    // 调用阿里通义千问API（使用带重试机制的请求）
+    let retryCount = 0;
+    const response = await requestWithRetry(requestConfig, {
+      ...retryConfig,
+      onRetry: (attempt, error, delay) => {
+        retryCount = attempt;
+        if (retryConfig.onRetry) {
+          retryConfig.onRetry(attempt, error, delay);
+        }
+      }
     });
 
     if (progressCallback) {
       progressCallback(60, '正在接收并解析AI生成的内容...');
     }
 
+    // 记录AI响应信息
+    const requestDuration = Date.now() - requestStartTime;
+    const responseSize = response.data ? JSON.stringify(response.data).length : 0;
+    
+    logAiResponse({
+      requestId,
+      success: true,
+      duration: requestDuration,
+      statusCode: response.status,
+      responseSize,
+      retryCount
+    });
+
     // 解析AI响应
     const aiResponse = response.data;
 
     if (aiResponse.output && aiResponse.output.text) {
-      // 提取JSON内容
-      const jsonMatch = aiResponse.output.text.match(/\[\s*\{[\s\S]*?\}\s*\]|\[\s*\{[\s\S]*\}\]/g);
-      if (jsonMatch) {
-        let generatedCards;
-        try {
-          generatedCards = JSON.parse(jsonMatch[0]);
-        } catch (parseError) {
-          console.error('解析AI响应JSON失败:', parseError);
-          console.error('AI响应内容:', jsonMatch[0].toString());
-          throw new Error('AI响应JSON格式错误');
+      // 使用增强的JSON解析工具提取和解析JSON内容
+      let generatedCards;
+      try {
+        generatedCards = extractAndParseJson(aiResponse.output.text, {
+          maxRetries: 3,
+          enablePreprocessing: true,
+          enableRecovery: true,
+          logErrors: true
+        });
+        
+        // 确保解析结果是数组
+        if (!Array.isArray(generatedCards)) {
+          console.warn('[JSON解析] 解析结果不是数组，尝试转换...');
+          if (typeof generatedCards === 'object' && generatedCards !== null) {
+            // 如果解析结果是对象，尝试提取其中的数组字段
+            const possibleArrayFields = ['cards', 'data', 'items', 'results'];
+            for (const field of possibleArrayFields) {
+              if (Array.isArray(generatedCards[field])) {
+                generatedCards = generatedCards[field];
+                break;
+              }
+            }
+            // 如果仍然不是数组，包装成数组
+            if (!Array.isArray(generatedCards)) {
+              generatedCards = [generatedCards];
+            }
+          } else {
+            throw new Error('解析结果格式不正确，期望数组或对象');
+          }
         }
+      } catch (parseError) {
+        console.error('[JSON解析] 解析AI响应JSON失败:', parseError);
+        console.error('[JSON解析] 错误详情:', {
+          message: parseError.message,
+          stack: parseError.stack
+        });
+        
+        // 记录完整的AI响应内容（用于调试）
+        const previewLength = config.logging?.aiResponsePreviewLength || 1000;
+        const responsePreview = aiResponse.output.text.substring(0, previewLength);
+        console.error(`[JSON解析] AI响应内容预览 (前${previewLength}字符):`, responsePreview);
+        console.error(`[JSON解析] AI响应内容总长度: ${aiResponse.output.text.length} 字符`);
+        
+        // 如果错误信息包含位置信息，显示该位置附近的文本
+        if (parseError.message && parseError.message.includes('position')) {
+          const positionMatch = parseError.message.match(/position (\d+)/);
+          if (positionMatch) {
+            const pos = parseInt(positionMatch[1]);
+            const start = Math.max(0, pos - 100);
+            const end = Math.min(aiResponse.output.text.length, pos + 100);
+            console.error(`[JSON解析] 错误位置: ${pos}`);
+            console.error('[JSON解析] 错误位置附近的文本:', aiResponse.output.text.substring(start, end));
+            console.error(`[JSON解析] 错误位置的字符: "${aiResponse.output.text[pos]}" (字符码: ${aiResponse.output.text.charCodeAt(pos)})`);
+          }
+        }
+        
+        // 尝试提取可能的JSON片段用于分析
+        const jsonErrorPreviewLength = config.logging?.jsonErrorPreviewLength || 500;
+        const jsonArrayMatch = aiResponse.output.text.match(/\[\s*\{[\s\S]{0,500}\}/);
+        if (jsonArrayMatch) {
+          console.error('[JSON解析] 检测到的JSON片段 (前500字符):', jsonArrayMatch[0].substring(0, jsonErrorPreviewLength));
+        }
+        
+        // 检查是否包含LaTeX公式
+        const latexMatches = aiResponse.output.text.match(/\$[^$]+\$/g);
+        if (latexMatches && latexMatches.length > 0) {
+          console.warn('[JSON解析] 检测到LaTeX公式，可能影响JSON解析:', latexMatches.slice(0, 5));
+        }
+        
+        // 检查是否包含未转义的反斜杠
+        const unescapedBackslashMatches = aiResponse.output.text.match(/[^\\]\\(?![\\"\/bfnrtux0-9])/g);
+        if (unescapedBackslashMatches && unescapedBackslashMatches.length > 0) {
+          console.warn('[JSON解析] 检测到可能的未转义反斜杠:', unescapedBackslashMatches.slice(0, 10));
+        }
+        
+        throw new Error(`AI响应JSON格式错误: ${parseError.message}`);
+      }
+      
+      if (generatedCards && Array.isArray(generatedCards) && generatedCards.length > 0) {
 
         if (progressCallback) {
           progressCallback(80, '正在验证题目内容质量...');
@@ -387,8 +581,8 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
         if (!validationResult.valid) {
           console.warn('[内容验证] 验证未完全通过:', validationResult.summary);
 
-          // 如果综合得分太低（< 0.6），尝试重新生成
-          if (validationResult.overallScore < 0.6 && count <= 10) {
+          // 如果综合得分太低，尝试重新生成
+          if (validationResult.overallScore < config.validation.minOverallScore && count <= config.validation.maxRetryCount) {
             console.log('[内容验证] 综合得分过低，尝试重新生成...');
             if (progressCallback) {
               progressCallback(50, '内容质量不足，正在重新生成...');
@@ -396,27 +590,58 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
 
             // 重新生成一次（最多重试1次）
             try {
-              const retryPrompt = prompt + `\n\n【重要提醒】\n上一轮生成的内容与要求匹配度不足，请确保：\n1. 每道题目必须明确关联学习目标\n2. 必须覆盖所有指定的知识点\n3. 必须符合题型要求\n4. 难度必须匹配${difficulty}级别\n\n请重新生成，确保严格符合要求。`;
+              const retryPrompt = prompt + `\n\n【重要提醒】\n上一轮生成的内容与要求匹配度不足，请确保：\n1. 每道题目必须明确关联学习目标\n2. 必须覆盖所有指定的知识点\n3. 难度必须匹配${difficulty}级别\n\n请重新生成，确保严格符合要求。`;
 
-              const retryResponse = await axios.post(aiConfig.apiUrl, {
-                model: "qwen-turbo",
-                input: { prompt: retryPrompt },
-                parameters: {
-                  temperature: 0.5, // 降低温度，提高一致性
-                  top_p: 0.9,
-                  max_tokens: 2048
-                }
-              }, {
+              // 使用带重试机制的请求
+              const retryResponse = await requestWithRetry({
+                method: 'POST',
+                url: aiConfig.apiUrl,
+                data: {
+                  model: aiConfig.model || config.ai.qwen.model,
+                  input: { prompt: retryPrompt },
+                  parameters: {
+                    ...config.ai.qwen.retryParams
+                  }
+                },
                 headers: {
                   'Authorization': `Bearer ${aiConfig.apiKey}`,
                   'Content-Type': 'application/json'
                 }
+              }, {
+                maxRetries: Math.max(1, config.api.retry.ai.maxRetries - 1), // 重试时减少重试次数
+                baseDelay: config.api.retry.ai.baseDelay,
+                maxDelay: Math.floor(config.api.retry.ai.maxDelay * 0.8),
+                timeout: config.getAiRetryTimeout(count),
+                progressCallback: progressCallback
               });
 
               if (retryResponse.data.output && retryResponse.data.output.text) {
-                const retryJsonMatch = retryResponse.data.output.text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-                if (retryJsonMatch) {
-                  const retryCards = JSON.parse(retryJsonMatch[0]);
+                try {
+                  let retryCards = extractAndParseJson(retryResponse.data.output.text, {
+                    maxRetries: 3,
+                    enablePreprocessing: true,
+                    enableRecovery: true,
+                    logErrors: true
+                  });
+                  
+                  // 确保解析结果是数组
+                  if (!Array.isArray(retryCards)) {
+                    if (typeof retryCards === 'object' && retryCards !== null) {
+                      const possibleArrayFields = ['cards', 'data', 'items', 'results'];
+                      for (const field of possibleArrayFields) {
+                        if (Array.isArray(retryCards[field])) {
+                          retryCards = retryCards[field];
+                          break;
+                        }
+                      }
+                      if (!Array.isArray(retryCards)) {
+                        retryCards = [retryCards];
+                      }
+                    } else {
+                      throw new Error('重试解析结果格式不正确');
+                    }
+                  }
+                  
                   const retryValidCards = retryCards.map(card => {
                     let options = card.options || [];
                     if (!Array.isArray(options) || options.length < 4) {
@@ -433,6 +658,9 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
                     validCards = retryValidCards;
                     console.log('[内容验证] 使用重试生成的结果');
                   }
+                } catch (retryParseError) {
+                  console.error('[内容验证] 重试解析失败:', retryParseError);
+                  // 继续使用原始结果
                 }
               }
             } catch (retryError) {
@@ -465,255 +693,69 @@ async function callQwenAPI(topic, difficulty, count, aiConfig, learningGoals = '
       throw new Error('AI响应缺少output字段');
     }
   } catch (error) {
-    console.error('阿里通义千问API调用失败:', error);
-    // AI接口调用失败时，返回空数组，触发降级处理
-    return [];
-  }
-}
-
-// 生成模拟问答卡片
-function generateMockCards(topic, difficulty, count, topicId) {
-  const generatedCards = [];
-
-  // 生成更真实的模拟数据
-  const mockQuestions = {
-    'JavaScript基础': [
-      {
-        question: '以下哪个不是JavaScript的基本数据类型？',
-        options: ['String', 'Number', 'Boolean', 'Object'],
-        correctAnswer: 'Object',
-        explanation: 'JavaScript的基本数据类型包括String、Number、Boolean、Null、Undefined、Symbol和BigInt。Object是引用数据类型。'
-      },
-      {
-        question: '以下哪个方法可以用来创建一个新的数组？',
-        options: ['Array.create()', 'new Array()', 'Array.new()', 'create Array()'],
-        correctAnswer: 'new Array()',
-        explanation: '在JavaScript中，可以使用new Array()或字面量[]来创建一个新的数组。'
-      },
-      {
-        question: '以下哪个关键字用于声明一个块级作用域的变量？',
-        options: ['var', 'let', 'const', 'function'],
-        correctAnswer: 'let',
-        explanation: 'let关键字用于声明块级作用域的变量，而var声明的是函数作用域的变量，const声明的是常量。'
-      },
-      {
-        question: '以下哪个方法可以用来遍历数组？',
-        options: ['forEach()', 'map()', 'filter()', '以上都是'],
-        correctAnswer: '以上都是',
-        explanation: 'forEach()、map()和filter()都是JavaScript中用于遍历数组的方法，它们各自有不同的用途。'
-      },
-      {
-        question: '以下哪个运算符用于比较值和类型是否都相等？',
-        options: ['==', '===', '=!', '!='],
-        correctAnswer: '===',
-        explanation: '===是严格相等运算符，用于比较值和类型是否都相等；==是相等运算符，会进行类型转换。'
+    // 记录AI响应错误信息
+    const requestDuration = Date.now() - requestStartTime;
+    const responseSize = error.response?.data ? JSON.stringify(error.response.data).length : 0;
+    
+    logAiResponse({
+      requestId,
+      success: false,
+      duration: requestDuration,
+      statusCode: error.response?.status,
+      responseSize,
+      retryCount: error.attempts || retryCount || 0,
+      error: {
+        code: error.code,
+        message: error.message,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : null
       }
-    ],
-    'React框架': [
-      {
-        question: '以下哪个是React的核心概念？',
-        options: ['组件', '指令', '模板', '控制器'],
-        correctAnswer: '组件',
-        explanation: '组件是React的核心概念，React应用由多个组件组成，每个组件负责渲染UI的一部分。'
-      },
-      {
-        question: '以下哪个钩子用于在组件挂载后执行副作用？',
-        options: ['useState', 'useEffect', 'useContext', 'useReducer'],
-        correctAnswer: 'useEffect',
-        explanation: 'useEffect钩子用于在组件挂载后执行副作用，如数据获取、订阅或手动DOM操作。'
-      },
-      {
-        question: '以下哪个方法用于更新组件的状态？',
-        options: ['setState', 'updateState', 'changeState', 'modifyState'],
-        correctAnswer: 'setState',
-        explanation: '在React类组件中，使用setState方法来更新组件的状态；在函数组件中，使用useState钩子返回的更新函数。'
-      },
-      {
-        question: '以下哪个属性用于向组件传递数据？',
-        options: ['props', 'state', 'context', 'ref'],
-        correctAnswer: 'props',
-        explanation: 'props是React组件之间传递数据的主要方式，父组件通过props向子组件传递数据。'
-      },
-      {
-        question: '以下哪个是React的虚拟DOM的作用？',
-        options: ['提高性能', '简化代码', '增强安全性', '支持跨平台'],
-        correctAnswer: '提高性能',
-        explanation: 'React的虚拟DOM通过减少实际DOM操作的次数来提高性能，它会先在内存中计算出DOM的变化，然后一次性更新到实际DOM中。'
-      }
-    ],
-    'Python基础': [
-      {
-        question: '以下哪个是Python的注释符号？',
-        options: ['//', '/* */', '#', '--'],
-        correctAnswer: '#',
-        explanation: '在Python中，使用#符号来添加单行注释，多行注释可以使用三引号(\'\'\'或""")。'
-      },
-      {
-        question: '以下哪个数据类型是可变的？',
-        options: ['字符串', '元组', '列表', '整数'],
-        correctAnswer: '列表',
-        explanation: '在Python中，列表是可变的数据类型，而字符串、元组和整数是不可变的数据类型。'
-      },
-      {
-        question: '以下哪个关键字用于定义函数？',
-        options: ['def', 'function', 'func', 'define'],
-        correctAnswer: 'def',
-        explanation: '在Python中，使用def关键字来定义函数，后面跟着函数名和参数列表。'
-      },
-      {
-        question: '以下哪个方法用于向列表末尾添加元素？',
-        options: ['append()', 'add()', 'push()', 'insert()'],
-        correctAnswer: 'append()',
-        explanation: '在Python中，append()方法用于向列表末尾添加元素，insert()方法用于在指定位置插入元素。'
-      },
-      {
-        question: '以下哪个是Python的条件语句？',
-        options: ['if-else', 'switch-case', 'select-case', 'cond'],
-        correctAnswer: 'if-else',
-        explanation: '在Python中，使用if-else语句来实现条件判断，Python不支持switch-case语句。'
-      }
-    ],
-    '地理': [
-      {
-        question: '以下哪个是地球的天然卫星？',
-        options: ['金星', '月球', '火星', '木星'],
-        correctAnswer: '月球',
-        explanation: '月球是地球唯一的天然卫星，它围绕地球运行，对地球的潮汐现象有重要影响。'
-      },
-      {
-        question: '世界上面积最大的国家是哪个？',
-        options: ['中国', '美国', '俄罗斯', '加拿大'],
-        correctAnswer: '俄罗斯',
-        explanation: '俄罗斯是世界上面积最大的国家，总面积约为1709.82万平方公里。'
-      },
-      {
-        question: '以下哪个是世界上最长的河流？',
-        options: ['尼罗河', '亚马逊河', '长江', '密西西比河'],
-        correctAnswer: '尼罗河',
-        explanation: '尼罗河是世界上最长的河流，全长约6650公里，流经非洲多个国家。'
-      },
-      {
-        question: '以下哪个是世界上最高的山峰？',
-        options: ['珠穆朗玛峰', '乔戈里峰', '干城章嘉峰', '洛子峰'],
-        correctAnswer: '珠穆朗玛峰',
-        explanation: '珠穆朗玛峰是世界上最高的山峰，海拔约8848.86米，位于中国和尼泊尔边境。'
-      },
-      {
-        question: '以下哪个是世界上最大的海洋？',
-        options: ['大西洋', '太平洋', '印度洋', '北冰洋'],
-        correctAnswer: '太平洋',
-        explanation: '太平洋是世界上最大的海洋，覆盖地球表面约30%的面积。'
-      }
-    ],
-    '天文': [
-      {
-        question: '以下哪个是太阳系中最大的行星？',
-        options: ['地球', '火星', '木星', '土星'],
-        correctAnswer: '木星',
-        explanation: '木星是太阳系中最大的行星，其直径约为14.3万公里，是地球直径的11倍多。'
-      },
-      {
-        question: '以下哪个是太阳系中离太阳最近的行星？',
-        options: ['水星', '金星', '地球', '火星'],
-        correctAnswer: '水星',
-        explanation: '水星是太阳系中离太阳最近的行星，平均距离约为5791万公里。'
-      },
-      {
-        question: '以下哪个是太阳系中唯一存在生命的行星？',
-        options: ['火星', '地球', '金星', '木星'],
-        correctAnswer: '地球',
-        explanation: '地球是太阳系中唯一已知存在生命的行星，其适宜的温度、液态水和大气层为生命的存在提供了条件。'
-      },
-      {
-        question: '以下哪个是恒星？',
-        options: ['地球', '月球', '太阳', '木星'],
-        correctAnswer: '太阳',
-        explanation: '太阳是恒星，它通过核聚变反应产生能量，为太阳系中的行星提供光和热。'
-      },
-      {
-        question: '以下哪个是银河系的形状？',
-        options: ['椭圆', '螺旋', '不规则', '棒旋'],
-        correctAnswer: '棒旋',
-        explanation: '银河系是一个棒旋星系，具有一个中央棒状结构和螺旋臂。'
-      }
-    ],
-    '历史': [
-      {
-        question: '以下哪个是中国古代四大发明之一？',
-        options: ['火药', '蒸汽机', '电灯', '电话'],
-        correctAnswer: '火药',
-        explanation: '火药是中国古代四大发明之一，它的发明对人类社会的发展产生了深远影响。'
-      },
-      {
-        question: '以下哪个是第一次世界大战的导火索？',
-        options: ['萨拉热窝事件', '珍珠港事件', '911事件', '卢沟桥事变'],
-        correctAnswer: '萨拉热窝事件',
-        explanation: '萨拉热窝事件是第一次世界大战的导火索，发生于1914年6月28日。'
-      },
-      {
-        question: '以下哪个是美国独立战争的转折点？',
-        options: ['萨拉托加大捷', '约克镇战役', '波士顿倾茶事件', '莱克星顿的枪声'],
-        correctAnswer: '萨拉托加大捷',
-        explanation: '萨拉托加大捷是美国独立战争的转折点，发生于1777年，增强了美国人民争取胜利的信心。'
-      },
-      {
-        question: '以下哪个是第二次世界大战中发生于1944年的重要战役？',
-        options: ['诺曼底登陆', '珍珠港事件', '斯大林格勒战役', '中途岛战役'],
-        correctAnswer: '诺曼底登陆',
-        explanation: '诺曼底登陆发生于1944年6月6日，是第二次世界大战中盟军在欧洲西线战场发起的一场大规模攻势。'
-      },
-      {
-        question: '以下哪个是中国历史上第一个统一的中央集权国家？',
-        options: ['夏朝', '商朝', '秦朝', '汉朝'],
-        correctAnswer: '秦朝',
-        explanation: '秦朝是中国历史上第一个统一的中央集权国家，由秦始皇嬴政于公元前221年建立。'
-      }
-    ]
-  };
-
-  // 根据主题选择合适的模拟问题
-  let topicQuestions;
-
-  // 检查主题是否在模拟问题列表中
-  if (mockQuestions[topic]) {
-    topicQuestions = mockQuestions[topic];
-  } else {
-    // 检查主题是否包含某些关键词，以便选择合适的模拟问题
-    if (topic.includes('地理') || topic.includes('地图') || topic.includes('国家') || topic.includes('河流') || topic.includes('山脉')) {
-      topicQuestions = mockQuestions['地理'];
-    } else if (topic.includes('天文') || topic.includes('宇宙') || topic.includes('行星') || topic.includes('恒星') || topic.includes('太阳系')) {
-      topicQuestions = mockQuestions['天文'];
-    } else if (topic.includes('历史') || topic.includes('古代') || topic.includes('战争') || topic.includes('朝代')) {
-      topicQuestions = mockQuestions['历史'];
-    } else if (topic.includes('Python') || topic.includes('python') || topic.includes('PYTHON')) {
-      topicQuestions = mockQuestions['Python基础'];
-    } else if (topic.includes('React') || topic.includes('react') || topic.includes('REACT')) {
-      topicQuestions = mockQuestions['React框架'];
-    } else if (topic.includes('JavaScript') || topic.includes('javascript') || topic.includes('JS') || topic.includes('js')) {
-      topicQuestions = mockQuestions['JavaScript基础'];
-    } else {
-      // 默认使用JavaScript基础的模拟问题
-      topicQuestions = mockQuestions['JavaScript基础'];
-    }
-  }
-
-  for (let i = 0; i < count; i++) {
-    // 循环使用可用的模拟问题
-    const questionData = topicQuestions[i % topicQuestions.length];
-
-    const qaCard = {
-      topicId,
-      question: questionData.question,
-      options: questionData.options,
-      correctAnswer: questionData.correctAnswer,
-      explanation: questionData.explanation,
-      difficulty
+    });
+    
+    console.error('[API调用失败] 阿里通义千问API调用失败:', error);
+    
+    // 记录详细的错误信息
+    const errorDetails = {
+      requestId,
+      message: error.message,
+      code: error.code,
+      attempts: error.attempts || 1,
+      duration: error.duration || requestDuration,
+      originalError: error.originalError ? {
+        message: error.originalError.message,
+        code: error.originalError.code,
+        response: error.originalError.response ? {
+          status: error.originalError.response.status,
+          statusText: error.originalError.response.statusText,
+          data: error.originalError.response.data
+        } : null
+      } : null,
+      topic,
+      difficulty,
+      count,
+      timestamp: new Date().toISOString()
     };
-
-    generatedCards.push(qaCard);
+    
+    console.error('[API调用失败] 详细错误信息:', JSON.stringify(errorDetails, null, 2));
+    
+    // 如果进度回调存在，更新进度信息
+    if (progressCallback) {
+      if (error.message && error.message.includes('超时')) {
+        progressCallback(95, '请求超时，请检查网络连接或稍后重试');
+      } else if (error.message && error.message.includes('连接')) {
+        progressCallback(95, '无法连接到AI服务，请检查网络设置');
+      } else {
+        progressCallback(95, `AI服务调用失败: ${error.message.substring(0, 50)}`);
+      }
+    }
+    
+    // AI接口调用失败时，抛出错误
+    throw error;
   }
-
-  return generatedCards;
 }
+
 
 module.exports = router;

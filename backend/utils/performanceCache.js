@@ -42,13 +42,13 @@ function setCache(key, value) {
 /**
  * 缓存参数解析结果
  */
-function cacheParameterParse(learningGoals, knowledgePoints, questionTypes, difficulty) {
-  const key = generateCacheKey('parse', learningGoals, knowledgePoints, questionTypes, difficulty);
+function cacheParameterParse(learningGoals, knowledgePoints, difficulty) {
+  const key = generateCacheKey('parse', learningGoals, knowledgePoints, difficulty);
   let result = getCache(key);
   
   if (!result) {
     const { parseAllParameters } = require('./parameterParser');
-    result = parseAllParameters(learningGoals, knowledgePoints, questionTypes, difficulty);
+    result = parseAllParameters(learningGoals, knowledgePoints, difficulty);
     setCache(key, result);
   }
   

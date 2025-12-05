@@ -1,17 +1,21 @@
 // utils/request.js
 const app = getApp()
 const feedback = require('./feedback')
+const config = require('./config')
 
 // 基础请求函数 - 必须先定义，因为其他函数会调用它
 const request = (url, method, data = {}) => {
   return new Promise((resolve, reject) => {
-    const fullUrl = `http://192.168.1.2:3000/api${url}`
-    console.log(`[Request] ${method} ${fullUrl}`, { data })
+    const fullUrl = config.getApiUrl(url)
+    if (config.env.enableDebugLog) {
+      console.log(`[Request] ${method} ${fullUrl}`, { data })
+    }
     
     wx.request({
       url: fullUrl,
       method,
       data,
+      timeout: config.api.timeout,
       header: {
         'Content-Type': 'application/json',
         'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : ''
@@ -26,8 +30,8 @@ const request = (url, method, data = {}) => {
           // 未授权，清除本地token和用户信息
           app.globalData.token = ''
           app.globalData.userInfo = null
-          wx.removeStorageSync('token')
-          wx.removeStorageSync('userInfo')
+          wx.removeStorageSync(config.auth.tokenKey)
+          wx.removeStorageSync(config.auth.userInfoKey)
           
           // 显示登录提示弹窗
           feedback.showLoginPrompt().then(confirmed => {
@@ -39,7 +43,7 @@ const request = (url, method, data = {}) => {
             }
           })
           
-          reject(new Error('未授权，请先登录'))
+          reject(new Error(config.errorMessages.auth.unauthorized))
         } else {
           const errorMsg = res.data.message || `请求失败 (${res.statusCode})`
           console.error(`[Error] ${method} ${fullUrl} ${res.statusCode}`, { error: res.data })
@@ -50,13 +54,13 @@ const request = (url, method, data = {}) => {
         console.error(`[Network Error] ${method} ${fullUrl}`, { error: err })
         
         // 处理常见网络错误
-        let errorMsg = '网络请求失败，请稍后重试'
+        let errorMsg = config.errorMessages.network.default
         if (err.errMsg && err.errMsg.includes('ERR_CONNECTION_REFUSED')) {
-          errorMsg = '服务器连接失败，请检查服务器是否运行'
+          errorMsg = config.errorMessages.network.connectionRefused
         } else if (err.errMsg && err.errMsg.includes('timeout')) {
-          errorMsg = '网络请求超时，请检查网络连接'
+          errorMsg = config.errorMessages.network.timeout
         } else if (err.errMsg && err.errMsg.includes('network')) {
-          errorMsg = '网络连接异常，请检查网络设置'
+          errorMsg = config.errorMessages.network.networkError
         }
         
         reject(new Error(errorMsg))
@@ -68,7 +72,6 @@ const request = (url, method, data = {}) => {
 // 认证状态缓存，避免重复验证
 let authCheckPromise = null;
 let authCheckTime = 0;
-const AUTH_CACHE_TIME = 5 * 60 * 1000; // 5分钟缓存
 
 // 检查用户是否登录 - 优化版，避免循环认证
 const checkAuth = () => {
@@ -76,13 +79,13 @@ const checkAuth = () => {
     const token = app.globalData.token || wx.getStorageSync('token')
     
     if (!token) {
-      reject(new Error('未授权，请先登录'))
+          reject(new Error(config.errorMessages.auth.unauthorized))
       return
     }
     
     // 检查缓存：如果最近验证过且仍在有效期内，直接返回
     const now = Date.now()
-    if (authCheckPromise && (now - authCheckTime) < AUTH_CACHE_TIME) {
+    if (authCheckPromise && (now - authCheckTime) < config.auth.cacheTime) {
       authCheckPromise.then(resolve).catch(reject)
       return
     }
@@ -102,9 +105,9 @@ const checkAuth = () => {
         app.globalData.userInfo = null
         authCheckPromise = null
         authCheckTime = 0
-        wx.removeStorageSync('token')
-        wx.removeStorageSync('userInfo')
-        throw new Error('未授权，请先登录')
+        wx.removeStorageSync(config.auth.tokenKey)
+        wx.removeStorageSync(config.auth.userInfoKey)
+        throw new Error(config.errorMessages.auth.unauthorized)
       })
     
     authCheckTime = now

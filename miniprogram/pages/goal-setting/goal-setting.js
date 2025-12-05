@@ -292,8 +292,9 @@ Page({
       return
     }
 
-    if (this.data.formData.description && this.data.formData.description.length > 500) {
-      feedback.showWarning('目标描述不能超过500个字符')
+    const config = require('../../utils/config')
+    if (this.data.formData.description && this.data.formData.description.length > config.validation.goalDescriptionMaxLength) {
+      feedback.showWarning(`目标描述不能超过${config.validation.goalDescriptionMaxLength}个字符`)
       return
     }
 

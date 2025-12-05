@@ -46,10 +46,10 @@
         <text class="slider-label">生成 {{cardCount}} 张卡片</text>
         <text class="slider-value">{{cardCount}}</text>
       </view>
-      <slider min="1" max="20" value="{{cardCount}}" bindchange="onCardCountChange" activeColor="#FF7A45" backgroundColor="#E8E8E8" block-size="32" block-color="#FF7A45"></slider>
+      <slider min="1" max="10" value="{{cardCount}}" bindchange="onCardCountChange" activeColor="#FF7A45" backgroundColor="#E8E8E8" block-size="32" block-color="#FF7A45"></slider>
       <view class="slider-range">
         <text class="range-min">1张</text>
-        <text class="range-max">20张</text>
+        <text class="range-max">10张</text>
       </view>
     </view>
   </view>
@@ -61,31 +61,13 @@
       <text class="section-title">高级设置</text>
       <text class="toggle-icon">{{showAdvancedOptions ? '▼' : '▶'}}</text>
     </view>
-    
-    <!-- 基础选项 -->
-    <view class="advanced-options">
-      <view class="option-item">
-        <view class="option-info">
-          <text class="option-title">自动播放</text>
-          <text class="option-desc">生成卡片后自动开始学习</text>
-        </view>
-        <switch checked="{{autoPlay}}" bindchange="onAutoPlayChange" color="#FF7A45"></switch>
-      </view>
-      <view class="option-item">
-        <view class="option-info">
-          <text class="option-title">语音提示</text>
-          <text class="option-desc">播放题目和答案的语音提示</text>
-        </view>
-        <switch checked="{{voicePrompt}}" bindchange="onVoicePromptChange" color="#FF7A45"></switch>
-      </view>
-    </view>
-    
+
     <!-- 扩展选项（可折叠） -->
     <view class="extended-options" wx:if="{{showAdvancedOptions}}">
       <view class="extended-option-item">
         <text class="extended-option-label">学习目标</text>
-        <textarea 
-          class="extended-option-input" 
+        <textarea
+          class="extended-option-input"
           placeholder="例如：掌握JavaScript基础语法、理解闭包和原型链"
           value="{{learningGoals}}"
           bindinput="onLearningGoalsInput"
@@ -94,11 +76,11 @@
         ></textarea>
         <text class="extended-option-hint">描述你希望通过这些题目达到的学习目标</text>
       </view>
-      
+
       <view class="extended-option-item">
         <text class="extended-option-label">知识点范围</text>
-        <textarea 
-          class="extended-option-input" 
+        <textarea
+          class="extended-option-input"
           placeholder="例如：变量声明、函数、数组、对象、异步编程"
           value="{{knowledgePoints}}"
           bindinput="onKnowledgePointsInput"
@@ -106,19 +88,6 @@
           auto-height
         ></textarea>
         <text class="extended-option-hint">指定需要重点覆盖的知识点</text>
-      </view>
-      
-      <view class="extended-option-item">
-        <text class="extended-option-label">题型要求</text>
-        <textarea 
-          class="extended-option-input" 
-          placeholder="例如：包含代码阅读题、概念理解题、实际应用题"
-          value="{{questionTypes}}"
-          bindinput="onQuestionTypesInput"
-          maxlength="200"
-          auto-height
-        ></textarea>
-        <text class="extended-option-hint">指定希望生成的题目类型</text>
       </view>
     </view>
   </view>
@@ -145,12 +114,18 @@
           <view class="spinner-item"></view>
         </view>
       </view>
-      
+
       <!-- 进度信息 -->
       <view class="progress-info">
         <text class="progress-title">正在生成学习题目</text>
         <text class="progress-message">{{progressMessage}}</text>
-        
+
+        <!-- 等待时间显示 -->
+        <view class="wait-time-info">
+          <text class="wait-time-label">已等待：</text>
+          <text class="wait-time-value">{{waitTimeText}}</text>
+        </view>
+
         <!-- 进度条 -->
         <view class="progress-bar-container">
           <view class="progress-bar-bg">

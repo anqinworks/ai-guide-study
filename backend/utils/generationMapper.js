@@ -102,41 +102,7 @@ function mapParametersToRules(parsedParams) {
     }
   }
 
-  // 3. 根据题型要求映射题目格式
-  if (parsedParams.questionTypes.hasTypes) {
-    const types = parsedParams.questionTypes;
-    
-    types.types.forEach(type => {
-      switch (type) {
-        case '代码阅读':
-          rules.contentRequirements.push({
-            requirement: '必须包含代码阅读题，提供代码片段并要求分析',
-            priority: 'high'
-          });
-          break;
-        case '概念理解':
-          rules.contentRequirements.push({
-            requirement: '必须包含概念理解题，考察理论知识',
-            priority: 'medium'
-          });
-          break;
-        case '实际应用':
-          rules.contentRequirements.push({
-            requirement: '必须包含实际应用题，结合真实场景',
-            priority: 'high'
-          });
-          break;
-        case '计算题':
-          rules.contentRequirements.push({
-            requirement: '必须包含计算题，需要数值计算或推导',
-            priority: 'medium'
-          });
-          break;
-      }
-    });
-  }
-
-  // 4. 根据难度映射验证标准
+  // 3. 根据难度映射验证标准
   const difficultyLevels = {
     '简单': { complexity: 'low', depth: 'surface', scope: 'single' },
     '中等': { complexity: 'medium', depth: 'moderate', scope: 'multiple' },
@@ -239,18 +205,6 @@ function generateEnhancedPrompt(topic, difficulty, count, parsedParams, rules) {
       });
     }
     prompt += `\n重要：每道题目必须明确涉及上述知识点之一，不能生成超出范围或无关的题目。\n\n`;
-  }
-
-  // 添加题型要求
-  if (parsedParams.questionTypes.hasTypes) {
-    prompt += `【题型要求】\n`;
-    parsedParams.questionTypes.types.forEach((type, index) => {
-      prompt += `${index + 1}. ${type}\n`;
-    });
-    if (parsedParams.questionTypes.formats.length > 0) {
-      prompt += `\n格式要求：${parsedParams.questionTypes.formats.join('、')}\n`;
-    }
-    prompt += `\n重要：生成的题目必须符合上述题型要求，不能生成不符合要求的题目。\n\n`;
   }
 
   // 添加规则映射的要求

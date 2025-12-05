@@ -45,7 +45,7 @@ Page({
     
     // 缓存相关
     cacheTime: 0,
-    cacheExpiry: 5 * 60 * 1000, // 5分钟缓存过期
+    cacheExpiry: require('../../utils/config').cache.statisticsExpiry,
     
     // 性能监控
     loadStartTime: 0,

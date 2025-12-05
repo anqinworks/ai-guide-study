@@ -1,14 +1,13 @@
 // pages/topic-setting/topic-setting.js
 const request = require('../../utils/request')
 const feedback = require('../../utils/feedback')
+const config = require('../../utils/config')
 
 Page({
   data: {
     topic: '',
-    difficulty: '简单',
-    cardCount: 10,
-    autoPlay: false,
-    voicePrompt: true,
+    difficulty: config.question.defaultDifficulty,
+    cardCount: config.question.defaultCardCount,
     loading: false,
     // 进度相关
     showProgress: false,
@@ -16,20 +15,20 @@ Page({
     progressMessage: '',
     taskId: null,
     progressTimer: null,
+    // 等待时间相关
+    waitTime: 0,        // 已等待时间（秒）
+    waitTimer: null,    // 等待时间计时器
+    waitTimeText: '0秒', // 格式化的等待时间文本
     // 高级选项
     showAdvancedOptions: false,
     learningGoals: '',
-    knowledgePoints: '',
-    questionTypes: ''
+    knowledgePoints: ''
   },
 
   onLoad() {
     const app = getApp()
     this.setData({
-      topic: app.globalData.currentTopic,
-      // 从本地存储恢复设置
-      autoPlay: wx.getStorageSync('autoPlay') || false,
-      voicePrompt: wx.getStorageSync('voicePrompt') || true
+      topic: app.globalData.currentTopic
     })
   },
 
@@ -44,18 +43,6 @@ Page({
     this.setData({
       cardCount: e.detail.value
     })
-  },
-
-  onAutoPlayChange(e) {
-    const autoPlay = e.detail.value
-    this.setData({ autoPlay })
-    wx.setStorageSync('autoPlay', autoPlay)
-  },
-
-  onVoicePromptChange(e) {
-    const voicePrompt = e.detail.value
-    this.setData({ voicePrompt })
-    wx.setStorageSync('voicePrompt', voicePrompt)
   },
 
   async generateCards() {
@@ -73,8 +60,13 @@ Page({
       showProgress: true,
       progress: 0,
       progressMessage: '正在准备生成任务...',
-      taskId: null
+      taskId: null,
+      waitTime: 0,
+      waitTimeText: '0秒'
     })
+    
+    // 启动等待时间计时器
+    this.startWaitTimer()
     
     try {
       // 使用带认证的请求，自动检查登录状态
@@ -91,8 +83,7 @@ Page({
         difficulty: this.data.difficulty,
         count: this.data.cardCount,
         learningGoals: this.data.learningGoals || '',
-        knowledgePoints: this.data.knowledgePoints || '',
-        questionTypes: this.data.questionTypes || ''
+        knowledgePoints: this.data.knowledgePoints || ''
       })
       
       // 获取任务ID
@@ -120,8 +111,11 @@ Page({
         loading: false,
         showProgress: false,
         progress: 0,
-        progressMessage: ''
+        progressMessage: '',
+        waitTime: 0,
+        waitTimeText: '0秒'
       })
+      this.stopWaitTimer()
     }
   },
 
@@ -135,10 +129,11 @@ Page({
     // 立即查询一次
     this.queryProgress(taskId)
     
-    // 每500ms轮询一次进度
+    // 使用配置的轮询间隔
+    const config = require('../../utils/config')
     const timer = setInterval(() => {
       this.queryProgress(taskId)
-    }, 500)
+    }, config.polling.progressInterval)
     
     this.setData({
       progressTimer: timer
@@ -152,6 +147,56 @@ Page({
       this.setData({
         progressTimer: null
       })
+    }
+  },
+
+  // 启动等待时间计时器
+  startWaitTimer() {
+    // 清除之前的计时器
+    this.stopWaitTimer()
+    
+    // 重置等待时间
+    this.setData({
+      waitTime: 0,
+      waitTimeText: '0秒'
+    })
+    
+    // 每秒更新一次等待时间
+    const timer = setInterval(() => {
+      const newWaitTime = this.data.waitTime + 1
+      this.setData({
+        waitTime: newWaitTime,
+        waitTimeText: this.formatWaitTime(newWaitTime)
+      })
+    }, 1000)
+    
+    this.setData({
+      waitTimer: timer
+    })
+  },
+
+  // 停止等待时间计时器
+  stopWaitTimer() {
+    if (this.data.waitTimer) {
+      clearInterval(this.data.waitTimer)
+      this.setData({
+        waitTimer: null
+      })
+    }
+  },
+
+  // 格式化等待时间
+  formatWaitTime(seconds) {
+    if (seconds < 60) {
+      return `${seconds}秒`
+    } else {
+      const minutes = Math.floor(seconds / 60)
+      const remainingSeconds = seconds % 60
+      if (remainingSeconds === 0) {
+        return `${minutes}分钟`
+      } else {
+        return `${minutes}分${remainingSeconds}秒`
+      }
     }
   },
 
@@ -170,6 +215,7 @@ Page({
       if (res.status === 'completed') {
         // 任务完成
         this.stopProgressPolling()
+        this.stopWaitTimer()
         
         if (res.result && res.result.cards && res.result.cards.length > 0) {
             const app = getApp()
@@ -178,29 +224,43 @@ Page({
             // 初始化answerResults数组为空数组，让它随答题进度增长
             app.globalData.answerResults = []
             
-            // 显示完成提示
-            feedback.showSuccess(`成功生成 ${res.result.cards.length} 道题目！`)
+            // 显示完成提示（包含等待时间）
+            const waitTimeText = this.data.waitTimeText
+            feedback.showSuccess(`成功生成 ${res.result.cards.length} 道题目！用时 ${waitTimeText}`)
           
           // 延迟跳转，让用户看到完成提示
+          const config = require('../../utils/config')
           setTimeout(() => {
             this.setData({
               loading: false,
               showProgress: false,
               progress: 0,
-              progressMessage: ''
+              progressMessage: '',
+              waitTime: 0,
+              waitTimeText: '0秒'
             })
             
             wx.navigateTo({
               url: '/pages/answer/answer'
             })
-          }, 500)
+          }, config.ui.navigationDelay)
         } else {
           throw new Error('未能生成题目，请重新尝试')
         }
       } else if (res.status === 'failed') {
         // 任务失败
         this.stopProgressPolling()
-        throw new Error(res.error || '生成失败，请重试')
+        this.stopWaitTimer()
+        
+        // 根据错误类型提供更友好的提示
+        let errorMessage = res.error || '生成失败，请重试'
+        if (res.error && res.error.includes('超时')) {
+          errorMessage = '请求超时，可能是网络连接不稳定或AI服务响应较慢。建议：\n1. 检查网络连接\n2. 减少题目数量\n3. 稍后重试'
+        } else if (res.error && res.error.includes('连接')) {
+          errorMessage = '无法连接到AI服务，请检查网络设置或稍后重试'
+        }
+        
+        throw new Error(errorMessage)
       }
       // 如果状态是pending或processing，继续轮询
     } catch (err) {
@@ -209,22 +269,28 @@ Page({
       // 如果是404，说明任务不存在或已过期
       if (err.message && (err.message.includes('404') || err.message.includes('不存在') || err.message.includes('已过期'))) {
         this.stopProgressPolling()
+        this.stopWaitTimer()
         this.setData({
           loading: false,
           showProgress: false,
           progress: 0,
-          progressMessage: ''
+          progressMessage: '',
+          waitTime: 0,
+          waitTimeText: '0秒'
         })
         
         feedback.showWarning('生成任务已过期，请重新生成')
       } else if (err.message && err.message.includes('无权')) {
         // 权限错误，停止轮询
         this.stopProgressPolling()
+        this.stopWaitTimer()
         this.setData({
           loading: false,
           showProgress: false,
           progress: 0,
-          progressMessage: ''
+          progressMessage: '',
+          waitTime: 0,
+          waitTimeText: '0秒'
         })
         feedback.showFormattedError(err)
       }
@@ -253,15 +319,9 @@ Page({
     })
   },
 
-  // 题型要求输入
-  onQuestionTypesInput(e) {
-    this.setData({
-      questionTypes: e.detail.value
-    })
-  },
-
   // 页面卸载时清理定时器
   onUnload() {
     this.stopProgressPolling()
+    this.stopWaitTimer()
   }
 })
